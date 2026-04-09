@@ -55,6 +55,16 @@
       z-index: 10;
     }
     header h1 { font-size: 17px; font-weight: 700; letter-spacing: -0.3px; }
+    .reset-btn {
+      font-size: 12px;
+      color: var(--text-muted);
+      background: none;
+      border: none;
+      cursor: pointer;
+      padding: 4px 8px;
+      border-radius: 6px;
+    }
+    .reset-btn:hover { color: var(--unknown); }
 
     nav { display: flex; gap: 6px; }
     nav button {
@@ -288,7 +298,7 @@
 <body>
   <header>
     <h1>Flashcards</h1>
-    <nav>
+    <nav id="main-nav">
       <button id="btn-study" class="active" onclick="showView('study')">Study</button>
       <button id="btn-manage" onclick="showView('manage')">Cards</button>
     </nav>
@@ -431,12 +441,13 @@ function render() {
 function renderSetup() {
   return '<div class="setup">' +
     '<h2>Welcome</h2>' +
-    '<p>This app stores your cards in a private GitHub Gist so they sync across all your devices.<br><br>' +
-    'You need a GitHub token with <strong>gist</strong> scope.<br>' +
-    'Create one at <a href="https://github.com/settings/tokens" target="_blank">github.com/settings/tokens</a> → ' +
-    '"Generate new token (classic)" → tick <strong>gist</strong> → Generate.</p>' +
+    '<p>Cards sync across devices via a private GitHub Gist.<br><br>' +
+    'You need a <strong>classic</strong> GitHub token (starts with <code>ghp_</code>) with <strong>gist</strong> scope.<br><br>' +
+    '1. Go to <a href="https://github.com/settings/tokens" target="_blank">github.com/settings/tokens</a><br>' +
+    '2. Click <strong>Generate new token (classic)</strong><br>' +
+    '3. Tick <strong>gist</strong> → Generate → copy the <code>ghp_…</code> token</p>' +
     (S.err ? '<div class="error-banner">' + esc(S.err) + '</div>' : '') +
-    '<div class="form-group"><label>GitHub Token</label>' +
+    '<div class="form-group"><label>GitHub Token (classic, ghp_…)</label>' +
     '<input type="password" id="tok" placeholder="ghp_…" /></div>' +
     '<button class="btn btn-primary btn-full" id="conn-btn" onclick="connect()">Connect</button>' +
     '</div>';
@@ -531,10 +542,9 @@ function renderManage() {
 
 function showView(v) {
   S.view = v; S.err = '';
-  document.getElementById('btn-study').className = v === 'study' ? 'active' : '';
-  document.getElementById('btn-manage').className = v === 'manage' ? 'active' : '';
   if (v === 'study' && !S.current) { S.current = nextCard(); S.flipped = false; }
   render();
+  updateNav();
 }
 
 function flip() {
@@ -578,17 +588,52 @@ function connect() {
   if (!inp || !inp.value.trim()) return;
   S.token = inp.value.trim();
   S.err = '';
-  localStorage.setItem('fc_token', S.token);
   var btn = document.getElementById('conn-btn');
   if (btn) { btn.disabled = true; btn.textContent = 'Connecting…'; }
   initGist()
-    .then(function() { S.current = nextCard(); render(); })
-    .catch(function(e) { S.err = e.message; render(); });
+    .then(function() {
+      localStorage.setItem('fc_token', S.token);
+      S.current = nextCard();
+      render();
+      updateNav();
+    })
+    .catch(function(e) {
+      S.err = e.message + ' — make sure you use a classic token (ghp_…) with gist scope';
+      S.token = '';
+      S.gistId = '';
+      render();
+    });
+}
+
+function resetToken() {
+  S.token = '';
+  S.gistId = '';
+  S.cards = [];
+  S.current = null;
+  S.err = '';
+  localStorage.removeItem('fc_token');
+  localStorage.removeItem('fc_gist_id');
+  render();
+  updateNav();
+}
+
+function updateNav() {
+  var nav = document.getElementById('main-nav');
+  if (!nav) return;
+  if (S.token) {
+    nav.innerHTML =
+      '<button id="btn-study" class="' + (S.view==='study'?'active':'') + '" onclick="showView(\'study\')">Study</button>' +
+      '<button id="btn-manage" class="' + (S.view==='manage'?'active':'') + '" onclick="showView(\'manage\')">Cards</button>' +
+      '<button class="reset-btn" onclick="resetToken()" title="Change token">⚙</button>';
+  } else {
+    nav.innerHTML = '';
+  }
 }
 
 // ── Init ──────────────────────────────────────────────────────────────────────
 
 (function() {
+  updateNav();
   if (S.token && S.gistId) {
     loadGist()
       .then(function() { S.current = nextCard(); render(); })
