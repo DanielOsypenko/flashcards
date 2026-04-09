@@ -8,7 +8,6 @@
     :root {
       --bg: #f0f0f0;
       --surface: #ffffff;
-      --surface2: #f8f8f8;
       --text: #1a1a1a;
       --text-muted: #777;
       --border: #e0e0e0;
@@ -21,7 +20,6 @@
       :root {
         --bg: #111111;
         --surface: #1e1e1e;
-        --surface2: #252525;
         --text: #e5e5e5;
         --text-muted: #888;
         --border: #303030;
@@ -55,6 +53,20 @@
       z-index: 10;
     }
     header h1 { font-size: 17px; font-weight: 700; letter-spacing: -0.3px; }
+
+    nav { display: flex; gap: 6px; align-items: center; }
+    nav button {
+      padding: 6px 16px;
+      border-radius: 20px;
+      border: 1px solid var(--border);
+      background: transparent;
+      color: var(--text-muted);
+      cursor: pointer;
+      font-size: 14px;
+      font-weight: 500;
+      transition: all 0.15s;
+    }
+    nav button.active { background: var(--primary); color: #fff; border-color: var(--primary); }
     .reset-btn {
       font-size: 13px;
       font-weight: 500;
@@ -67,30 +79,12 @@
     }
     .reset-btn:hover { color: var(--unknown); border-color: var(--unknown); }
 
-    nav { display: flex; gap: 6px; }
-    nav button {
-      padding: 6px 16px;
-      border-radius: 20px;
-      border: 1px solid var(--border);
-      background: transparent;
-      color: var(--text-muted);
-      cursor: pointer;
-      font-size: 14px;
-      font-weight: 500;
-      transition: all 0.15s;
-    }
-    nav button.active {
-      background: var(--primary);
-      color: #fff;
-      border-color: var(--primary);
-    }
-
     main {
       flex: 1;
       display: flex;
       flex-direction: column;
       align-items: center;
-      padding: 28px 16px 40px;
+      padding: 24px 16px 40px;
       width: 100%;
       max-width: 540px;
       margin: 0 auto;
@@ -151,12 +145,57 @@
     }
 
     /* ── Study ── */
-    .study-area { width: 100%; display: flex; flex-direction: column; align-items: center; gap: 20px; }
+    .study-area { width: 100%; display: flex; flex-direction: column; align-items: center; gap: 18px; }
+
+    /* Filter + shuffle bar */
+    .controls-bar {
+      width: 100%;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    .filter-pills {
+      display: flex;
+      gap: 6px;
+      flex: 1;
+      overflow-x: auto;
+      padding-bottom: 2px;
+      scrollbar-width: none;
+    }
+    .filter-pills::-webkit-scrollbar { display: none; }
+    .fpill {
+      flex-shrink: 0;
+      padding: 5px 13px;
+      border-radius: 20px;
+      border: 1px solid var(--border);
+      background: var(--surface);
+      color: var(--text-muted);
+      font-size: 13px;
+      font-weight: 500;
+      cursor: pointer;
+      transition: all 0.15s;
+      white-space: nowrap;
+    }
+    .fpill.active { background: var(--primary); color: #fff; border-color: var(--primary); }
+    .shuffle-btn {
+      flex-shrink: 0;
+      padding: 5px 13px;
+      border-radius: 20px;
+      border: 1px solid var(--border);
+      background: var(--surface);
+      color: var(--text-muted);
+      font-size: 13px;
+      font-weight: 500;
+      cursor: pointer;
+      transition: all 0.15s;
+      white-space: nowrap;
+    }
+    .shuffle-btn.active { background: #7c3aed; color: #fff; border-color: #7c3aed; }
 
     .stats-bar {
       width: 100%;
       display: flex;
-      gap: 18px;
+      gap: 10px;
       font-size: 13px;
       color: var(--text-muted);
       align-items: center;
@@ -206,7 +245,7 @@
       user-select: none;
     }
     .card-back { transform: rotateY(180deg); }
-    .card-label {
+    .card-lang {
       font-size: 11px;
       text-transform: uppercase;
       letter-spacing: 1px;
@@ -221,17 +260,19 @@
       line-height: 1.25;
       letter-spacing: -0.5px;
     }
-    .card-hint {
-      margin-top: 14px;
-      font-size: 12px;
+    .card-hint { margin-top: 14px; font-size: 12px; color: var(--text-muted); }
+    .card-tag {
+      margin-top: 16px;
+      font-size: 11px;
+      font-weight: 600;
+      padding: 3px 10px;
+      border-radius: 20px;
+      background: var(--bg);
       color: var(--text-muted);
+      border: 1px solid var(--border);
     }
 
-    .action-row {
-      width: 100%;
-      display: flex;
-      gap: 10px;
-    }
+    .action-row { width: 100%; display: flex; gap: 10px; }
     .action-row .btn { flex: 1; padding: 15px; font-size: 16px; }
 
     .skip-btn {
@@ -259,9 +300,13 @@
       padding: 18px;
     }
     .add-form h3 { font-size: 14px; font-weight: 700; margin-bottom: 12px; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.5px; }
-
     .form-row { display: flex; gap: 10px; }
     .form-row .form-group { flex: 1; margin-bottom: 12px; }
+
+    .manage-controls { display: flex; align-items: center; justify-content: space-between; }
+    .section-title { font-size: 13px; font-weight: 600; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.5px; }
+    .manage-filter { display: flex; gap: 6px; overflow-x: auto; scrollbar-width: none; }
+    .manage-filter::-webkit-scrollbar { display: none; }
 
     .cards-list { display: flex; flex-direction: column; gap: 8px; }
     .card-item {
@@ -276,9 +321,20 @@
     .card-item-text { flex: 1; min-width: 0; }
     .card-item-en { font-size: 15px; font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
     .card-item-ru { font-size: 13px; color: var(--text-muted); margin-top: 2px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-    .card-item-score { font-size: 12px; color: var(--text-muted); white-space: nowrap; }
-    .card-item-score .s-k { color: var(--known); }
-    .card-item-score .s-u { color: var(--unknown); }
+    .card-item-meta { display: flex; align-items: center; gap: 6px; margin-top: 4px; }
+    .label-badge {
+      font-size: 11px;
+      font-weight: 600;
+      padding: 2px 8px;
+      border-radius: 20px;
+      background: var(--bg);
+      color: var(--text-muted);
+      border: 1px solid var(--border);
+      white-space: nowrap;
+    }
+    .card-item-score { font-size: 12px; color: var(--text-muted); white-space: nowrap; flex-shrink: 0; }
+    .s-k { color: var(--known); }
+    .s-u { color: var(--unknown); }
     .del-btn {
       background: none;
       border: none;
@@ -293,7 +349,20 @@
     }
     .del-btn:hover { color: var(--unknown); }
 
-    .section-title { font-size: 13px; font-weight: 600; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.5px; }
+    /* Progress bar for shuffle mode */
+    .progress-bar-wrap {
+      width: 100%;
+      height: 4px;
+      background: var(--border);
+      border-radius: 2px;
+      overflow: hidden;
+    }
+    .progress-bar-fill {
+      height: 100%;
+      background: #7c3aed;
+      border-radius: 2px;
+      transition: width 0.3s;
+    }
   </style>
 </head>
 <body>
@@ -308,15 +377,19 @@
 
 <script>
 var S = {
-  token:   localStorage.getItem('fc_token') || '',
-  gistId:  localStorage.getItem('fc_gist_id') || '',
-  cards:   [],
-  current: null,
-  lastId:  null,
-  flipped: false,
-  saving:  false,
-  view:    'study',
-  err:     ''
+  token:        localStorage.getItem('fc_token') || '',
+  gistId:       localStorage.getItem('fc_gist_id') || '',
+  cards:        [],
+  current:      null,
+  lastId:       null,
+  flipped:      false,
+  saving:       false,
+  view:         'study',
+  err:          '',
+  filterLabel:  '',       // '' = all; study mode filter
+  manageFilter: '',       // manage list filter
+  shuffleMode:  false,
+  shuffleQueue: []        // remaining ids in shuffle round
 };
 
 // ── Gist API ─────────────────────────────────────────────────────────────────
@@ -379,6 +452,11 @@ function initGist() {
 
 // ── Card logic ────────────────────────────────────────────────────────────────
 
+function filteredPool() {
+  if (!S.filterLabel) return S.cards;
+  return S.cards.filter(function(c) { return c.label === S.filterLabel; });
+}
+
 function weight(c) {
   var k = c.known || 0, u = c.unknown || 0;
   if (!k && !u) return 4;
@@ -386,20 +464,59 @@ function weight(c) {
   return 1;
 }
 
+function shuffleArray(arr) {
+  var a = arr.slice();
+  for (var i = a.length - 1; i > 0; i--) {
+    var j = Math.floor(Math.random() * (i + 1));
+    var t = a[i]; a[i] = a[j]; a[j] = t;
+  }
+  return a;
+}
+
+function buildShuffleQueue() {
+  var pool = filteredPool();
+  S.shuffleQueue = shuffleArray(pool.map(function(c) { return c.id; }));
+}
+
 function nextCard() {
-  if (!S.cards.length) return null;
-  var pool = S.cards.length > 1 ? S.cards.filter(function(c) { return c.id !== S.lastId; }) : S.cards;
-  if (!pool.length) pool = S.cards;
-  var total = pool.reduce(function(s, c) { return s + weight(c); }, 0);
+  var pool = filteredPool();
+  if (!pool.length) return null;
+
+  if (S.shuffleMode) {
+    // Keep queue in sync with current pool
+    var poolIds = pool.map(function(c) { return c.id; });
+    S.shuffleQueue = S.shuffleQueue.filter(function(id) { return poolIds.indexOf(id) !== -1; });
+    if (!S.shuffleQueue.length) buildShuffleQueue();
+
+    // Try to avoid repeating the last card
+    var candidates = S.shuffleQueue.filter(function(id) { return id !== S.lastId; });
+    if (!candidates.length) candidates = S.shuffleQueue;
+    var nextId = candidates[0];
+    S.shuffleQueue = S.shuffleQueue.filter(function(id) { return id !== nextId; });
+    return pool.find(function(c) { return c.id === nextId; }) || pool[0];
+  }
+
+  // Weighted random
+  var exclude = pool.length > 1 ? pool.filter(function(c) { return c.id !== S.lastId; }) : pool;
+  if (!exclude.length) exclude = pool;
+  var total = exclude.reduce(function(s, c) { return s + weight(c); }, 0);
   var r = Math.random() * total, cum = 0;
-  for (var i = 0; i < pool.length; i++) { cum += weight(pool[i]); if (r < cum) return pool[i]; }
-  return pool[pool.length - 1];
+  for (var i = 0; i < exclude.length; i++) { cum += weight(exclude[i]); if (r < cum) return exclude[i]; }
+  return exclude[exclude.length - 1];
 }
 
 function uid() { return Date.now().toString(36) + Math.random().toString(36).slice(2, 7); }
 
-function addCard(en, ru) {
-  var c = { id: uid(), english: en.trim(), russian: ru.trim(), known: 0, unknown: 0 };
+function uniqueLabels() {
+  var seen = {}, labels = [];
+  S.cards.forEach(function(c) {
+    if (c.label && !seen[c.label]) { seen[c.label] = true; labels.push(c.label); }
+  });
+  return labels.sort();
+}
+
+function addCard(en, ru, label) {
+  var c = { id: uid(), english: en.trim(), russian: ru.trim(), label: (label || '').trim(), known: 0, unknown: 0 };
   S.cards.push(c);
   if (!S.current) S.current = c;
   scheduleSave();
@@ -407,6 +524,7 @@ function addCard(en, ru) {
 
 function delCard(id) {
   S.cards = S.cards.filter(function(c) { return c.id !== id; });
+  S.shuffleQueue = S.shuffleQueue.filter(function(qid) { return qid !== id; });
   if (S.current && S.current.id === id) { S.current = nextCard(); S.flipped = false; }
   scheduleSave();
 }
@@ -455,35 +573,67 @@ function renderSetup() {
 }
 
 function renderStudy() {
+  var pool = filteredPool();
   var total = S.cards.length;
-  var known = S.cards.filter(function(c) { return (c.known||0) > (c.unknown||0); }).length;
-  var fresh = S.cards.filter(function(c) { return !(c.known||0) && !(c.unknown||0); }).length;
+  var known = pool.filter(function(c) { return (c.known||0) > (c.unknown||0); }).length;
+  var fresh = pool.filter(function(c) { return !(c.known||0) && !(c.unknown||0); }).length;
+  var labels = uniqueLabels();
+
+  // Shuffle progress: how many cards remain in this round
+  var queueLeft = S.shuffleMode ? S.shuffleQueue.length : 0;
+  var poolSize  = pool.length;
 
   var html = '<div class="study-area">';
   html += '<div id="saving-lbl" class="saving"></div>';
   if (S.err) html += '<div class="error-banner">' + esc(S.err) + '</div>';
 
-  if (total) {
+  // Controls bar: filter pills + shuffle button
+  if (total > 0) {
+    html += '<div class="controls-bar"><div class="filter-pills">';
+    html += '<button class="fpill' + (!S.filterLabel ? ' active' : '') + '" onclick="setFilter(\'\')">All (' + total + ')</button>';
+    labels.forEach(function(lbl) {
+      var cnt = S.cards.filter(function(c) { return c.label === lbl; }).length;
+      html += '<button class="fpill' + (S.filterLabel === lbl ? ' active' : '') + '" onclick="setFilter(\'' + esc(lbl) + '\')">' + esc(lbl) + ' (' + cnt + ')</button>';
+    });
+    html += '</div>';
+    html += '<button class="shuffle-btn' + (S.shuffleMode ? ' active' : '') + '" onclick="toggleShuffle()">⇄ Shuffle</button>';
+    html += '</div>';
+  }
+
+  // Shuffle progress bar
+  if (S.shuffleMode && poolSize > 0) {
+    var done = poolSize - queueLeft;
+    var pct = Math.round((done / poolSize) * 100);
+    html += '<div class="progress-bar-wrap"><div class="progress-bar-fill" style="width:' + pct + '%"></div></div>';
+  }
+
+  // Stats
+  if (pool.length > 0) {
     html += '<div class="stats-bar">' +
       '<span class="pill"><span class="dot k"></span>' + known + ' known</span>' +
       '<span class="pill"><span class="dot n"></span>' + fresh + ' new</span>' +
-      '<span class="pill">' + total + ' total</span>' +
+      '<span class="pill">' + pool.length + ' cards</span>' +
       '</div>';
   }
 
-  if (!S.current) {
-    html += '<div class="empty-state"><h3>No cards yet</h3><p>Go to Cards tab to add words.</p></div>';
+  if (!S.current || !pool.find(function(c) { return c.id === S.current.id; })) {
+    if (!pool.length && S.filterLabel) {
+      html += '<div class="empty-state"><h3>No cards in "' + esc(S.filterLabel) + '"</h3><p>Add some cards with this label in the Cards tab.</p></div>';
+    } else {
+      html += '<div class="empty-state"><h3>No cards yet</h3><p>Go to Cards tab to add words.</p></div>';
+    }
   } else {
     var c = S.current;
     html += '<div class="card-container">' +
       '<div class="card' + (S.flipped ? ' flipped' : '') + '" onclick="flip()" id="fc">' +
         '<div class="card-face">' +
-          '<div class="card-label">English</div>' +
+          '<div class="card-lang">English</div>' +
           '<div class="card-word">' + esc(c.english) + '</div>' +
+          (c.label ? '<div class="card-tag">' + esc(c.label) + '</div>' : '') +
           '<div class="card-hint">tap to reveal</div>' +
         '</div>' +
         '<div class="card-face card-back">' +
-          '<div class="card-label">Russian</div>' +
+          '<div class="card-lang">Russian</div>' +
           '<div class="card-word">' + esc(c.russian) + '</div>' +
         '</div>' +
       '</div></div>';
@@ -502,6 +652,12 @@ function renderStudy() {
 }
 
 function renderManage() {
+  var labels = uniqueLabels();
+  var displayCards = S.manageFilter
+    ? S.cards.filter(function(c) { return c.label === S.manageFilter; })
+    : S.cards;
+  var sorted = displayCards.slice().sort(function(a,b){ return (b.unknown||0)-(a.unknown||0); });
+
   var html = '<div class="manage-area">';
   html += '<div id="saving-lbl" class="saving"></div>';
   if (S.err) html += '<div class="error-banner">' + esc(S.err) + '</div>';
@@ -511,26 +667,39 @@ function renderManage() {
       '<div class="form-group"><label>English</label><input id="inp-en" type="text" placeholder="to procrastinate" /></div>' +
       '<div class="form-group"><label>Russian</label><input id="inp-ru" type="text" placeholder="откладывать" /></div>' +
     '</div>' +
+    '<div class="form-group"><label>Label <span style="font-weight:400;text-transform:none">(optional, e.g. verb, adjective)</span></label>' +
+    '<input id="inp-lbl" type="text" list="label-suggestions" placeholder="verb" />' +
+    '<datalist id="label-suggestions">' + labels.map(function(l) { return '<option value="' + esc(l) + '">'; }).join('') + '</datalist>' +
+    '</div>' +
     '<button class="btn btn-primary btn-full" onclick="submitCard()">Add</button>' +
     '</div>';
 
-  html += '<div class="section-title">' + S.cards.length + ' card' + (S.cards.length !== 1 ? 's' : '') + '</div>';
-  html += '<div class="cards-list">';
-
-  if (!S.cards.length) {
-    html += '<div class="empty-state" style="padding:32px 0"><p>No cards yet.</p></div>';
+  // Manage filter
+  if (labels.length > 0) {
+    html += '<div class="manage-controls">' +
+      '<div class="section-title">' + displayCards.length + ' / ' + S.cards.length + ' cards</div>' +
+      '<div class="manage-filter">' +
+      '<button class="fpill' + (!S.manageFilter ? ' active' : '') + '" onclick="setManageFilter(\'\')">All</button>';
+    labels.forEach(function(lbl) {
+      html += '<button class="fpill' + (S.manageFilter === lbl ? ' active' : '') + '" onclick="setManageFilter(\'' + esc(lbl) + '\')">' + esc(lbl) + '</button>';
+    });
+    html += '</div></div>';
   } else {
-    var sorted = S.cards.slice().sort(function(a,b){ return (b.unknown||0)-(a.unknown||0); });
+    html += '<div class="section-title">' + S.cards.length + ' card' + (S.cards.length !== 1 ? 's' : '') + '</div>';
+  }
+
+  html += '<div class="cards-list">';
+  if (!sorted.length) {
+    html += '<div class="empty-state" style="padding:32px 0"><p>' + (S.manageFilter ? 'No cards with this label.' : 'No cards yet.') + '</p></div>';
+  } else {
     sorted.forEach(function(c) {
       html += '<div class="card-item">' +
         '<div class="card-item-text">' +
           '<div class="card-item-en">' + esc(c.english) + '</div>' +
           '<div class="card-item-ru">' + esc(c.russian) + '</div>' +
+          (c.label ? '<div class="card-item-meta"><span class="label-badge">' + esc(c.label) + '</span></div>' : '') +
         '</div>' +
-        '<div class="card-item-score">' +
-          '<span class="s-k">✓' + (c.known||0) + '</span> ' +
-          '<span class="s-u">✗' + (c.unknown||0) + '</span>' +
-        '</div>' +
+        '<div class="card-item-score"><span class="s-k">✓' + (c.known||0) + '</span> <span class="s-u">✗' + (c.unknown||0) + '</span></div>' +
         '<button class="del-btn" onclick="delCard(\'' + c.id + '\')">×</button>' +
         '</div>';
     });
@@ -544,14 +713,10 @@ function renderManage() {
 function showView(v) {
   S.view = v; S.err = '';
   if (v === 'study' && !S.current) { S.current = nextCard(); S.flipped = false; }
-  render();
-  updateNav();
+  render(); updateNav();
 }
 
-function flip() {
-  S.flipped = !S.flipped;
-  render();
-}
+function flip() { S.flipped = !S.flipped; render(); }
 
 function skip() {
   S.lastId = S.current ? S.current.id : null;
@@ -560,12 +725,38 @@ function skip() {
   render();
 }
 
+function setFilter(label) {
+  S.filterLabel = label;
+  S.shuffleQueue = [];
+  S.lastId = null;
+  S.flipped = false;
+  S.current = nextCard();
+  render();
+}
+
+function setManageFilter(label) {
+  S.manageFilter = label;
+  render();
+}
+
+function toggleShuffle() {
+  S.shuffleMode = !S.shuffleMode;
+  S.shuffleQueue = [];
+  S.lastId = null;
+  S.flipped = false;
+  S.current = nextCard();
+  render();
+}
+
 function submitCard() {
-  var en = document.getElementById('inp-en'), ru = document.getElementById('inp-ru');
+  var en = document.getElementById('inp-en');
+  var ru = document.getElementById('inp-ru');
+  var lbl = document.getElementById('inp-lbl');
   if (!en || !ru) return;
-  if (!en.value.trim() || !ru.value.trim()) { alert('Fill both fields'); return; }
-  addCard(en.value, ru.value);
+  if (!en.value.trim() || !ru.value.trim()) { alert('Fill English and Russian fields'); return; }
+  addCard(en.value, ru.value, lbl ? lbl.value : '');
   en.value = ''; ru.value = '';
+  if (lbl) lbl.value = '';
   en.focus();
   render();
 }
@@ -581,27 +772,21 @@ function connect() {
     .then(function() {
       localStorage.setItem('fc_token', S.token);
       S.current = nextCard();
-      render();
-      updateNav();
+      render(); updateNav();
     })
     .catch(function(e) {
       S.err = e.message + ' — make sure you use a classic token (ghp_…) with gist scope';
-      S.token = '';
-      S.gistId = '';
+      S.token = ''; S.gistId = '';
       render();
     });
 }
 
 function resetToken() {
-  S.token = '';
-  S.gistId = '';
-  S.cards = [];
-  S.current = null;
-  S.err = '';
+  S.token = ''; S.gistId = ''; S.cards = []; S.current = null; S.err = '';
+  S.filterLabel = ''; S.manageFilter = ''; S.shuffleMode = false; S.shuffleQueue = [];
   localStorage.removeItem('fc_token');
   localStorage.removeItem('fc_gist_id');
-  render();
-  updateNav();
+  render(); updateNav();
 }
 
 function updateNav() {
