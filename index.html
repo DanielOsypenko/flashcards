@@ -56,15 +56,16 @@
     }
     header h1 { font-size: 17px; font-weight: 700; letter-spacing: -0.3px; }
     .reset-btn {
-      font-size: 12px;
+      font-size: 13px;
+      font-weight: 500;
       color: var(--text-muted);
       background: none;
-      border: none;
+      border: 1px solid var(--border);
       cursor: pointer;
-      padding: 4px 8px;
-      border-radius: 6px;
+      padding: 6px 12px;
+      border-radius: 20px;
     }
-    .reset-btn:hover { color: var(--unknown); }
+    .reset-btn:hover { color: var(--unknown); border-color: var(--unknown); }
 
     nav { display: flex; gap: 6px; }
     nav button {
@@ -549,21 +550,7 @@ function showView(v) {
 
 function flip() {
   S.flipped = !S.flipped;
-  var fc = document.getElementById('fc');
-  if (!fc) return;
-  if (S.flipped) {
-    fc.classList.add('flipped');
-    var area = fc.closest('.study-area');
-    var skip = area && area.querySelector('.skip-btn');
-    if (skip) skip.remove();
-    var row = document.createElement('div');
-    row.className = 'action-row';
-    row.innerHTML = '<button class="btn btn-unknown" onclick="markCard(false)">✗ Don\'t know</button>' +
-                    '<button class="btn btn-known" onclick="markCard(true)">✓ Know it</button>';
-    area.appendChild(row);
-  } else {
-    fc.classList.remove('flipped');
-  }
+  render();
 }
 
 function skip() {
@@ -624,7 +611,7 @@ function updateNav() {
     nav.innerHTML =
       '<button id="btn-study" class="' + (S.view==='study'?'active':'') + '" onclick="showView(\'study\')">Study</button>' +
       '<button id="btn-manage" class="' + (S.view==='manage'?'active':'') + '" onclick="showView(\'manage\')">Cards</button>' +
-      '<button class="reset-btn" onclick="resetToken()" title="Change token">⚙</button>';
+      '<button class="reset-btn" onclick="resetToken()">Token</button>';
   } else {
     nav.innerHTML = '';
   }
