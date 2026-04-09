@@ -389,7 +389,8 @@ var S = {
   filterLabel:  '',       // '' = all; study mode filter
   manageFilter: '',       // manage list filter
   shuffleMode:  false,
-  shuffleQueue: []        // remaining ids in shuffle round
+  shuffleQueue: [],       // remaining ids in shuffle round
+  direction:    'en-ru'  // 'en-ru' | 'ru-en'
 };
 
 // ── Gist API ─────────────────────────────────────────────────────────────────
@@ -597,6 +598,7 @@ function renderStudy() {
     });
     html += '</div>';
     html += '<button class="shuffle-btn' + (S.shuffleMode ? ' active' : '') + '" onclick="toggleShuffle()">⇄ Shuffle</button>';
+    html += '<button class="shuffle-btn' + (S.direction === 'ru-en' ? ' active' : '') + '" onclick="toggleDirection()" title="Flip card direction">' + (S.direction === 'en-ru' ? 'EN→RU' : 'RU→EN') + '</button>';
     html += '</div>';
   }
 
@@ -627,14 +629,14 @@ function renderStudy() {
     html += '<div class="card-container">' +
       '<div class="card' + (S.flipped ? ' flipped' : '') + '" onclick="flip()" id="fc">' +
         '<div class="card-face">' +
-          '<div class="card-lang">English</div>' +
-          '<div class="card-word">' + esc(c.english) + '</div>' +
+          '<div class="card-lang">' + (S.direction === 'en-ru' ? 'English' : 'Russian') + '</div>' +
+          '<div class="card-word">' + esc(S.direction === 'en-ru' ? c.english : c.russian) + '</div>' +
           (c.label ? '<div class="card-tag">' + esc(c.label) + '</div>' : '') +
           '<div class="card-hint">tap to reveal</div>' +
         '</div>' +
         '<div class="card-face card-back">' +
-          '<div class="card-lang">Russian</div>' +
-          '<div class="card-word">' + esc(c.russian) + '</div>' +
+          '<div class="card-lang">' + (S.direction === 'en-ru' ? 'Russian' : 'English') + '</div>' +
+          '<div class="card-word">' + esc(S.direction === 'en-ru' ? c.russian : c.english) + '</div>' +
         '</div>' +
       '</div></div>';
 
@@ -739,6 +741,12 @@ function setManageFilter(label) {
   render();
 }
 
+function toggleDirection() {
+  S.direction = S.direction === 'en-ru' ? 'ru-en' : 'en-ru';
+  S.flipped = false;
+  render();
+}
+
 function toggleShuffle() {
   S.shuffleMode = !S.shuffleMode;
   S.shuffleQueue = [];
@@ -783,7 +791,7 @@ function connect() {
 
 function resetToken() {
   S.token = ''; S.gistId = ''; S.cards = []; S.current = null; S.err = '';
-  S.filterLabel = ''; S.manageFilter = ''; S.shuffleMode = false; S.shuffleQueue = [];
+  S.filterLabel = ''; S.manageFilter = ''; S.shuffleMode = false; S.shuffleQueue = []; S.direction = 'en-ru';
   localStorage.removeItem('fc_token');
   localStorage.removeItem('fc_gist_id');
   render(); updateNav();
