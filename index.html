@@ -1,0 +1,606 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Flashcards</title>
+  <style>
+    :root {
+      --bg: #f0f0f0;
+      --surface: #ffffff;
+      --surface2: #f8f8f8;
+      --text: #1a1a1a;
+      --text-muted: #777;
+      --border: #e0e0e0;
+      --primary: #2563eb;
+      --known: #16a34a;
+      --unknown: #dc2626;
+      --shadow: 0 4px 24px rgba(0,0,0,0.10);
+    }
+    @media (prefers-color-scheme: dark) {
+      :root {
+        --bg: #111111;
+        --surface: #1e1e1e;
+        --surface2: #252525;
+        --text: #e5e5e5;
+        --text-muted: #888;
+        --border: #303030;
+        --primary: #3b82f6;
+        --known: #22c55e;
+        --unknown: #ef4444;
+        --shadow: 0 4px 24px rgba(0,0,0,0.45);
+      }
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      min-height: 100dvh;
+      display: flex;
+      flex-direction: column;
+    }
+
+    header {
+      padding: 14px 20px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      background: var(--surface);
+      border-bottom: 1px solid var(--border);
+      position: sticky;
+      top: 0;
+      z-index: 10;
+    }
+    header h1 { font-size: 17px; font-weight: 700; letter-spacing: -0.3px; }
+
+    nav { display: flex; gap: 6px; }
+    nav button {
+      padding: 6px 16px;
+      border-radius: 20px;
+      border: 1px solid var(--border);
+      background: transparent;
+      color: var(--text-muted);
+      cursor: pointer;
+      font-size: 14px;
+      font-weight: 500;
+      transition: all 0.15s;
+    }
+    nav button.active {
+      background: var(--primary);
+      color: #fff;
+      border-color: var(--primary);
+    }
+
+    main {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      padding: 28px 16px 40px;
+      width: 100%;
+      max-width: 540px;
+      margin: 0 auto;
+    }
+
+    /* ── Setup ── */
+    .setup { width: 100%; }
+    .setup h2 { font-size: 22px; margin-bottom: 8px; }
+    .setup p { color: var(--text-muted); font-size: 14px; line-height: 1.6; margin-bottom: 22px; }
+    .setup a { color: var(--primary); }
+
+    .form-group { margin-bottom: 14px; }
+    .form-group label { display: block; font-size: 12px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px; color: var(--text-muted); margin-bottom: 6px; }
+    .form-group input {
+      width: 100%;
+      padding: 11px 14px;
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      background: var(--surface);
+      color: var(--text);
+      font-size: 15px;
+      outline: none;
+      transition: border-color 0.2s;
+    }
+    .form-group input:focus { border-color: var(--primary); }
+
+    .btn {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      padding: 12px 20px;
+      border-radius: 10px;
+      border: none;
+      font-size: 15px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: opacity 0.15s, transform 0.1s;
+    }
+    .btn:active { transform: scale(0.97); }
+    .btn:disabled { opacity: 0.45; cursor: not-allowed; transform: none; }
+    .btn-primary { background: var(--primary); color: #fff; }
+    .btn-known   { background: var(--known);   color: #fff; }
+    .btn-unknown { background: var(--unknown); color: #fff; }
+    .btn-full { width: 100%; }
+
+    .error-banner {
+      background: #fef2f2;
+      border: 1px solid #fca5a5;
+      color: #991b1b;
+      padding: 11px 15px;
+      border-radius: 8px;
+      font-size: 13px;
+      margin-bottom: 16px;
+      width: 100%;
+    }
+    @media (prefers-color-scheme: dark) {
+      .error-banner { background: #3b0a0a; border-color: #7f1d1d; color: #fca5a5; }
+    }
+
+    /* ── Study ── */
+    .study-area { width: 100%; display: flex; flex-direction: column; align-items: center; gap: 20px; }
+
+    .stats-bar {
+      width: 100%;
+      display: flex;
+      gap: 18px;
+      font-size: 13px;
+      color: var(--text-muted);
+      align-items: center;
+    }
+    .pill {
+      display: inline-flex;
+      align-items: center;
+      gap: 5px;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 20px;
+      padding: 4px 10px;
+      font-size: 12px;
+      font-weight: 500;
+    }
+    .dot { width: 7px; height: 7px; border-radius: 50%; display: inline-block; }
+    .dot.k { background: var(--known); }
+    .dot.u { background: var(--unknown); }
+    .dot.n { background: var(--text-muted); }
+
+    /* Card flip */
+    .card-container { width: 100%; perspective: 1000px; }
+    .card {
+      width: 100%;
+      min-height: 210px;
+      position: relative;
+      transform-style: preserve-3d;
+      transition: transform 0.45s cubic-bezier(.4,0,.2,1);
+      cursor: pointer;
+    }
+    .card.flipped { transform: rotateY(180deg); }
+    .card-face {
+      position: absolute;
+      width: 100%;
+      min-height: 210px;
+      backface-visibility: hidden;
+      -webkit-backface-visibility: hidden;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      padding: 36px 28px;
+      background: var(--surface);
+      border-radius: 18px;
+      box-shadow: var(--shadow);
+      border: 1px solid var(--border);
+      user-select: none;
+    }
+    .card-back { transform: rotateY(180deg); }
+    .card-label {
+      font-size: 11px;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+      color: var(--text-muted);
+      margin-bottom: 14px;
+      font-weight: 600;
+    }
+    .card-word {
+      font-size: 30px;
+      font-weight: 700;
+      text-align: center;
+      line-height: 1.25;
+      letter-spacing: -0.5px;
+    }
+    .card-hint {
+      margin-top: 14px;
+      font-size: 12px;
+      color: var(--text-muted);
+    }
+
+    .action-row {
+      width: 100%;
+      display: flex;
+      gap: 10px;
+    }
+    .action-row .btn { flex: 1; padding: 15px; font-size: 16px; }
+
+    .skip-btn {
+      font-size: 13px;
+      color: var(--text-muted);
+      background: none;
+      border: none;
+      cursor: pointer;
+      padding: 4px 8px;
+    }
+    .skip-btn:hover { color: var(--text); }
+
+    .empty-state { text-align: center; padding: 56px 0; color: var(--text-muted); }
+    .empty-state h3 { font-size: 18px; color: var(--text); margin-bottom: 8px; }
+
+    .saving { font-size: 12px; color: var(--text-muted); height: 16px; text-align: center; width: 100%; }
+
+    /* ── Manage ── */
+    .manage-area { width: 100%; display: flex; flex-direction: column; gap: 18px; }
+
+    .add-form {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 14px;
+      padding: 18px;
+    }
+    .add-form h3 { font-size: 14px; font-weight: 700; margin-bottom: 12px; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.5px; }
+
+    .form-row { display: flex; gap: 10px; }
+    .form-row .form-group { flex: 1; margin-bottom: 12px; }
+
+    .cards-list { display: flex; flex-direction: column; gap: 8px; }
+    .card-item {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 13px 16px;
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+    .card-item-text { flex: 1; min-width: 0; }
+    .card-item-en { font-size: 15px; font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .card-item-ru { font-size: 13px; color: var(--text-muted); margin-top: 2px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .card-item-score { font-size: 12px; color: var(--text-muted); white-space: nowrap; }
+    .card-item-score .s-k { color: var(--known); }
+    .card-item-score .s-u { color: var(--unknown); }
+    .del-btn {
+      background: none;
+      border: none;
+      color: var(--text-muted);
+      cursor: pointer;
+      font-size: 20px;
+      line-height: 1;
+      padding: 2px 4px;
+      border-radius: 4px;
+      transition: color 0.15s;
+      flex-shrink: 0;
+    }
+    .del-btn:hover { color: var(--unknown); }
+
+    .section-title { font-size: 13px; font-weight: 600; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.5px; }
+  </style>
+</head>
+<body>
+  <header>
+    <h1>Flashcards</h1>
+    <nav>
+      <button id="btn-study" class="active" onclick="showView('study')">Study</button>
+      <button id="btn-manage" onclick="showView('manage')">Cards</button>
+    </nav>
+  </header>
+  <main id="root"></main>
+
+<script>
+var S = {
+  token:   localStorage.getItem('fc_token') || '',
+  gistId:  localStorage.getItem('fc_gist_id') || '',
+  cards:   [],
+  current: null,
+  lastId:  null,
+  flipped: false,
+  saving:  false,
+  view:    'study',
+  err:     ''
+};
+
+// ── Gist API ─────────────────────────────────────────────────────────────────
+
+function hdrs() {
+  return {
+    'Authorization': 'token ' + S.token,
+    'Content-Type': 'application/json',
+    'Accept': 'application/vnd.github.v3+json'
+  };
+}
+
+function saveGist() {
+  if (!S.token || !S.gistId) return Promise.resolve();
+  S.saving = true; renderSaving();
+  return fetch('https://api.github.com/gists/' + S.gistId, {
+    method: 'PATCH',
+    headers: hdrs(),
+    body: JSON.stringify({ files: { 'flashcards.json': { content: JSON.stringify({ cards: S.cards }, null, 2) } } })
+  }).then(function(r) {
+    S.saving = false;
+    if (!r.ok) throw new Error('Save failed ' + r.status);
+    renderSaving();
+  }).catch(function(e) { S.saving = false; S.err = e.message; render(); });
+}
+
+var saveTimer = null;
+function scheduleSave() {
+  if (saveTimer) clearTimeout(saveTimer);
+  saveTimer = setTimeout(saveGist, 900);
+}
+
+function loadGist() {
+  return fetch('https://api.github.com/gists/' + S.gistId, { headers: hdrs() })
+    .then(function(r) { if (!r.ok) throw new Error('Load failed ' + r.status); return r.json(); })
+    .then(function(d) {
+      var f = d.files['flashcards.json'];
+      if (f) S.cards = (JSON.parse(f.content).cards) || [];
+    });
+}
+
+function createGist() {
+  return fetch('https://api.github.com/gists', {
+    method: 'POST', headers: hdrs(),
+    body: JSON.stringify({ description: 'Flashcards App Data', public: false,
+      files: { 'flashcards.json': { content: JSON.stringify({ cards: [] }, null, 2) } } })
+  }).then(function(r) { if (!r.ok) throw new Error('Create gist failed ' + r.status); return r.json(); })
+    .then(function(d) { S.gistId = d.id; localStorage.setItem('fc_gist_id', d.id); });
+}
+
+function initGist() {
+  return fetch('https://api.github.com/gists?per_page=100', { headers: hdrs() })
+    .then(function(r) { if (!r.ok) throw new Error('Auth failed ' + r.status); return r.json(); })
+    .then(function(list) {
+      var found = list.find(function(g) { return g.description === 'Flashcards App Data' && g.files['flashcards.json']; });
+      if (found) { S.gistId = found.id; localStorage.setItem('fc_gist_id', found.id); return loadGist(); }
+      else return createGist();
+    });
+}
+
+// ── Card logic ────────────────────────────────────────────────────────────────
+
+function weight(c) {
+  var k = c.known || 0, u = c.unknown || 0;
+  if (!k && !u) return 4;
+  if (u > k) return u - k + 2;
+  return 1;
+}
+
+function nextCard() {
+  if (!S.cards.length) return null;
+  var pool = S.cards.length > 1 ? S.cards.filter(function(c) { return c.id !== S.lastId; }) : S.cards;
+  if (!pool.length) pool = S.cards;
+  var total = pool.reduce(function(s, c) { return s + weight(c); }, 0);
+  var r = Math.random() * total, cum = 0;
+  for (var i = 0; i < pool.length; i++) { cum += weight(pool[i]); if (r < cum) return pool[i]; }
+  return pool[pool.length - 1];
+}
+
+function uid() { return Date.now().toString(36) + Math.random().toString(36).slice(2, 7); }
+
+function addCard(en, ru) {
+  var c = { id: uid(), english: en.trim(), russian: ru.trim(), known: 0, unknown: 0 };
+  S.cards.push(c);
+  if (!S.current) S.current = c;
+  scheduleSave();
+}
+
+function delCard(id) {
+  S.cards = S.cards.filter(function(c) { return c.id !== id; });
+  if (S.current && S.current.id === id) { S.current = nextCard(); S.flipped = false; }
+  scheduleSave();
+}
+
+function markCard(known) {
+  if (!S.current) return;
+  if (known) S.current.known = (S.current.known || 0) + 1;
+  else S.current.unknown = (S.current.unknown || 0) + 1;
+  S.lastId = S.current.id;
+  S.current = nextCard();
+  S.flipped = false;
+  scheduleSave();
+  render();
+}
+
+// ── Render ────────────────────────────────────────────────────────────────────
+
+function esc(s) {
+  return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
+
+function renderSaving() {
+  var el = document.getElementById('saving-lbl');
+  if (el) el.textContent = S.saving ? 'Saving…' : '';
+}
+
+function render() {
+  var root = document.getElementById('root');
+  if (!S.token) { root.innerHTML = renderSetup(); return; }
+  root.innerHTML = S.view === 'study' ? renderStudy() : renderManage();
+}
+
+function renderSetup() {
+  return '<div class="setup">' +
+    '<h2>Welcome</h2>' +
+    '<p>This app stores your cards in a private GitHub Gist so they sync across all your devices.<br><br>' +
+    'You need a GitHub token with <strong>gist</strong> scope.<br>' +
+    'Create one at <a href="https://github.com/settings/tokens" target="_blank">github.com/settings/tokens</a> → ' +
+    '"Generate new token (classic)" → tick <strong>gist</strong> → Generate.</p>' +
+    (S.err ? '<div class="error-banner">' + esc(S.err) + '</div>' : '') +
+    '<div class="form-group"><label>GitHub Token</label>' +
+    '<input type="password" id="tok" placeholder="ghp_…" /></div>' +
+    '<button class="btn btn-primary btn-full" id="conn-btn" onclick="connect()">Connect</button>' +
+    '</div>';
+}
+
+function renderStudy() {
+  var total = S.cards.length;
+  var known = S.cards.filter(function(c) { return (c.known||0) > (c.unknown||0); }).length;
+  var fresh = S.cards.filter(function(c) { return !(c.known||0) && !(c.unknown||0); }).length;
+
+  var html = '<div class="study-area">';
+  html += '<div id="saving-lbl" class="saving"></div>';
+  if (S.err) html += '<div class="error-banner">' + esc(S.err) + '</div>';
+
+  if (total) {
+    html += '<div class="stats-bar">' +
+      '<span class="pill"><span class="dot k"></span>' + known + ' known</span>' +
+      '<span class="pill"><span class="dot n"></span>' + fresh + ' new</span>' +
+      '<span class="pill">' + total + ' total</span>' +
+      '</div>';
+  }
+
+  if (!S.current) {
+    html += '<div class="empty-state"><h3>No cards yet</h3><p>Go to Cards tab to add words.</p></div>';
+  } else {
+    var c = S.current;
+    html += '<div class="card-container">' +
+      '<div class="card' + (S.flipped ? ' flipped' : '') + '" onclick="flip()" id="fc">' +
+        '<div class="card-face">' +
+          '<div class="card-label">English</div>' +
+          '<div class="card-word">' + esc(c.english) + '</div>' +
+          '<div class="card-hint">tap to reveal</div>' +
+        '</div>' +
+        '<div class="card-face card-back">' +
+          '<div class="card-label">Russian</div>' +
+          '<div class="card-word">' + esc(c.russian) + '</div>' +
+        '</div>' +
+      '</div></div>';
+
+    if (S.flipped) {
+      html += '<div class="action-row">' +
+        '<button class="btn btn-unknown" onclick="markCard(false)">✗ Don\'t know</button>' +
+        '<button class="btn btn-known" onclick="markCard(true)">✓ Know it</button>' +
+        '</div>';
+    } else {
+      html += '<button class="skip-btn" onclick="skip()">Skip →</button>';
+    }
+  }
+  html += '</div>';
+  return html;
+}
+
+function renderManage() {
+  var html = '<div class="manage-area">';
+  html += '<div id="saving-lbl" class="saving"></div>';
+  if (S.err) html += '<div class="error-banner">' + esc(S.err) + '</div>';
+
+  html += '<div class="add-form"><h3>Add card</h3>' +
+    '<div class="form-row">' +
+      '<div class="form-group"><label>English</label><input id="inp-en" type="text" placeholder="to procrastinate" /></div>' +
+      '<div class="form-group"><label>Russian</label><input id="inp-ru" type="text" placeholder="откладывать" /></div>' +
+    '</div>' +
+    '<button class="btn btn-primary btn-full" onclick="submitCard()">Add</button>' +
+    '</div>';
+
+  html += '<div class="section-title">' + S.cards.length + ' card' + (S.cards.length !== 1 ? 's' : '') + '</div>';
+  html += '<div class="cards-list">';
+
+  if (!S.cards.length) {
+    html += '<div class="empty-state" style="padding:32px 0"><p>No cards yet.</p></div>';
+  } else {
+    var sorted = S.cards.slice().sort(function(a,b){ return (b.unknown||0)-(a.unknown||0); });
+    sorted.forEach(function(c) {
+      html += '<div class="card-item">' +
+        '<div class="card-item-text">' +
+          '<div class="card-item-en">' + esc(c.english) + '</div>' +
+          '<div class="card-item-ru">' + esc(c.russian) + '</div>' +
+        '</div>' +
+        '<div class="card-item-score">' +
+          '<span class="s-k">✓' + (c.known||0) + '</span> ' +
+          '<span class="s-u">✗' + (c.unknown||0) + '</span>' +
+        '</div>' +
+        '<button class="del-btn" onclick="delCard(\'' + c.id + '\')">×</button>' +
+        '</div>';
+    });
+  }
+  html += '</div></div>';
+  return html;
+}
+
+// ── Actions ───────────────────────────────────────────────────────────────────
+
+function showView(v) {
+  S.view = v; S.err = '';
+  document.getElementById('btn-study').className = v === 'study' ? 'active' : '';
+  document.getElementById('btn-manage').className = v === 'manage' ? 'active' : '';
+  if (v === 'study' && !S.current) { S.current = nextCard(); S.flipped = false; }
+  render();
+}
+
+function flip() {
+  S.flipped = !S.flipped;
+  var fc = document.getElementById('fc');
+  if (!fc) return;
+  if (S.flipped) {
+    fc.classList.add('flipped');
+    var area = fc.closest('.study-area');
+    var skip = area && area.querySelector('.skip-btn');
+    if (skip) skip.remove();
+    var row = document.createElement('div');
+    row.className = 'action-row';
+    row.innerHTML = '<button class="btn btn-unknown" onclick="markCard(false)">✗ Don\'t know</button>' +
+                    '<button class="btn btn-known" onclick="markCard(true)">✓ Know it</button>';
+    area.appendChild(row);
+  } else {
+    fc.classList.remove('flipped');
+  }
+}
+
+function skip() {
+  S.lastId = S.current ? S.current.id : null;
+  S.current = nextCard();
+  S.flipped = false;
+  render();
+}
+
+function submitCard() {
+  var en = document.getElementById('inp-en'), ru = document.getElementById('inp-ru');
+  if (!en || !ru) return;
+  if (!en.value.trim() || !ru.value.trim()) { alert('Fill both fields'); return; }
+  addCard(en.value, ru.value);
+  en.value = ''; ru.value = '';
+  en.focus();
+  render();
+}
+
+function connect() {
+  var inp = document.getElementById('tok');
+  if (!inp || !inp.value.trim()) return;
+  S.token = inp.value.trim();
+  S.err = '';
+  localStorage.setItem('fc_token', S.token);
+  var btn = document.getElementById('conn-btn');
+  if (btn) { btn.disabled = true; btn.textContent = 'Connecting…'; }
+  initGist()
+    .then(function() { S.current = nextCard(); render(); })
+    .catch(function(e) { S.err = e.message; render(); });
+}
+
+// ── Init ──────────────────────────────────────────────────────────────────────
+
+(function() {
+  if (S.token && S.gistId) {
+    loadGist()
+      .then(function() { S.current = nextCard(); render(); })
+      .catch(function(e) { S.err = e.message; render(); });
+  } else if (S.token) {
+    initGist()
+      .then(function() { S.current = nextCard(); render(); })
+      .catch(function(e) { S.err = e.message; render(); });
+  } else {
+    render();
+  }
+})();
+</script>
+</body>
+</html>
