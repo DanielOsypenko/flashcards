@@ -293,6 +293,32 @@
 
     .saving { font-size: 12px; color: var(--text-muted); height: 16px; text-align: center; width: 100%; }
 
+    .session-pill {
+      display: inline-flex;
+      align-items: center;
+      gap: 2px;
+      font-size: 12px;
+      font-weight: 500;
+      padding: 4px 10px;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 20px;
+    }
+    .session-sep { color: var(--border); }
+    .reset-session-btn {
+      flex-shrink: 0;
+      background: none;
+      border: 1px solid var(--border);
+      color: var(--text-muted);
+      cursor: pointer;
+      font-size: 14px;
+      padding: 3px 9px;
+      border-radius: 20px;
+      transition: all 0.15s;
+      line-height: 1.4;
+    }
+    .reset-session-btn:hover { color: var(--primary); border-color: var(--primary); }
+
     /* ── Manage ── */
     .manage-area { width: 100%; display: flex; flex-direction: column; gap: 18px; }
 
@@ -485,7 +511,9 @@ var S = {
   importOpen:   false,
   importMsg:    '',       // feedback after import
   addMsg:       '',       // feedback from add-card form
-  managePage:   0        // current page in the manage list
+  managePage:   0,       // current page in the manage list
+  sessionKnown:   0,     // "Know it" clicks this session
+  sessionUnknown: 0      // "Don't know" clicks this session
 };
 
 // ── Gist API ─────────────────────────────────────────────────────────────────
@@ -631,8 +659,8 @@ function delCard(id) {
 
 function markCard(known) {
   if (!S.current) return;
-  if (known) S.current.known = (S.current.known || 0) + 1;
-  else S.current.unknown = (S.current.unknown || 0) + 1;
+  if (known) { S.current.known = (S.current.known || 0) + 1; S.sessionKnown++; }
+  else { S.current.unknown = (S.current.unknown || 0) + 1; S.sessionUnknown++; }
   S.lastId = S.current.id;
   S.current = nextCard();
   S.flipped = false;
@@ -711,10 +739,17 @@ function renderStudy() {
 
   // Stats
   if (pool.length > 0) {
+    var sessionTotal = S.sessionKnown + S.sessionUnknown;
     html += '<div class="stats-bar">' +
       '<span class="pill"><span class="dot k"></span>' + known + ' known</span>' +
       '<span class="pill"><span class="dot n"></span>' + fresh + ' new</span>' +
       '<span class="pill">' + pool.length + ' cards</span>' +
+      '<span class="session-pill" style="margin-left:auto">' +
+        '<span class="s-k">✓' + S.sessionKnown + '</span>' +
+        '<span class="session-sep"> / </span>' +
+        '<span class="s-u">✗' + S.sessionUnknown + '</span>' +
+      '</span>' +
+      '<button class="reset-session-btn" onclick="resetSession()" title="Restart session count">↺</button>' +
       '</div>';
   }
 
@@ -882,6 +917,12 @@ function setManagePage(p) {
   render();
 }
 
+function resetSession() {
+  S.sessionKnown = 0;
+  S.sessionUnknown = 0;
+  render();
+}
+
 function toggleDirection() {
   S.direction = S.direction === 'en-ru' ? 'ru-en' : 'en-ru';
   S.flipped = false;
@@ -985,7 +1026,7 @@ function connect() {
 
 function resetToken() {
   S.token = ''; S.gistId = ''; S.cards = []; S.current = null; S.err = '';
-  S.filterLabel = ''; S.manageFilter = ''; S.shuffleMode = false; S.shuffleQueue = []; S.direction = 'en-ru'; S.importOpen = false; S.importMsg = ''; S.addMsg = ''; S.managePage = 0;
+  S.filterLabel = ''; S.manageFilter = ''; S.shuffleMode = false; S.shuffleQueue = []; S.direction = 'en-ru'; S.importOpen = false; S.importMsg = ''; S.addMsg = ''; S.managePage = 0; S.sessionKnown = 0; S.sessionUnknown = 0;
   localStorage.removeItem('fc_token');
   localStorage.removeItem('fc_gist_id');
   render(); updateNav();
