@@ -484,6 +484,7 @@ var S = {
   direction:    'en-ru', // 'en-ru' | 'ru-en'
   importOpen:   false,
   importMsg:    '',       // feedback after import
+  addMsg:       '',       // feedback from add-card form
   managePage:   0        // current page in the manage list
 };
 
@@ -611,10 +612,14 @@ function uniqueLabels() {
 }
 
 function addCard(en, ru, label) {
-  var c = { id: uid(), english: en.trim(), russian: ru.trim(), label: (label || '').trim(), known: 0, unknown: 0 };
+  var enNorm = en.trim().toLowerCase();
+  var ruNorm = ru.trim().toLowerCase();
+  if (S.cards.some(function(x) { return x.english.toLowerCase() === enNorm; })) return false;
+  var c = { id: uid(), english: enNorm, russian: ruNorm, label: (label || '').trim(), known: 0, unknown: 0 };
   S.cards.push(c);
   if (!S.current) S.current = c;
   scheduleSave();
+  return true;
 }
 
 function delCard(id) {
@@ -769,6 +774,7 @@ function renderManage() {
     '<datalist id="label-suggestions">' + labels.map(function(l) { return '<option value="' + esc(l) + '">'; }).join('') + '</datalist>' +
     '</div>' +
     '<button class="btn btn-primary btn-full" onclick="submitCard()">Add</button>' +
+    (S.addMsg ? '<div class="' + (S.addMsg[0] === '✓' ? 'import-msg-ok' : 'import-msg-err') + '" style="margin-top:10px">' + esc(S.addMsg) + '</div>' : '') +
     '</div>';
 
   // Import panel
@@ -842,7 +848,7 @@ function renderManage() {
 // ── Actions ───────────────────────────────────────────────────────────────────
 
 function showView(v) {
-  S.view = v; S.err = '';
+  S.view = v; S.err = ''; S.addMsg = '';
   if (v === 'study' && !S.current) { S.current = nextCard(); S.flipped = false; }
   render(); updateNav();
 }
@@ -916,7 +922,7 @@ function doImport(raw) {
       return x.english.toLowerCase() === c.english.trim().toLowerCase();
     });
     if (dup) { skipped++; return; }
-    S.cards.push({ id: uid(), english: c.english.trim(), russian: c.russian.trim(), label: (c.label || '').trim(), known: 0, unknown: 0 });
+    S.cards.push({ id: uid(), english: c.english.trim().toLowerCase(), russian: c.russian.trim().toLowerCase(), label: (c.label || '').trim(), known: 0, unknown: 0 });
     added++;
   });
 
@@ -947,8 +953,10 @@ function submitCard() {
   var ru = document.getElementById('inp-ru');
   var lbl = document.getElementById('inp-lbl');
   if (!en || !ru) return;
-  if (!en.value.trim() || !ru.value.trim()) { alert('Fill English and Russian fields'); return; }
-  addCard(en.value, ru.value, lbl ? lbl.value : '');
+  if (!en.value.trim() || !ru.value.trim()) { S.addMsg = '✗ Fill English and Russian fields'; render(); return; }
+  var ok = addCard(en.value, ru.value, lbl ? lbl.value : '');
+  if (!ok) { S.addMsg = '✗ "' + en.value.trim().toLowerCase() + '" already exists'; render(); return; }
+  S.addMsg = '';
   en.value = ''; ru.value = '';
   if (lbl) lbl.value = '';
   en.focus();
@@ -977,7 +985,7 @@ function connect() {
 
 function resetToken() {
   S.token = ''; S.gistId = ''; S.cards = []; S.current = null; S.err = '';
-  S.filterLabel = ''; S.manageFilter = ''; S.shuffleMode = false; S.shuffleQueue = []; S.direction = 'en-ru'; S.importOpen = false; S.importMsg = ''; S.managePage = 0;
+  S.filterLabel = ''; S.manageFilter = ''; S.shuffleMode = false; S.shuffleQueue = []; S.direction = 'en-ru'; S.importOpen = false; S.importMsg = ''; S.addMsg = ''; S.managePage = 0;
   localStorage.removeItem('fc_token');
   localStorage.removeItem('fc_gist_id');
   render(); updateNav();
