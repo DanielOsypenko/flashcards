@@ -703,8 +703,6 @@ function renderSetup() {
 function renderStudy() {
   var pool = filteredPool();
   var total = S.cards.length;
-  var known = pool.filter(function(c) { return (c.known||0) > (c.unknown||0); }).length;
-  var fresh = pool.filter(function(c) { return !(c.known||0) && !(c.unknown||0); }).length;
   var labels = uniqueLabels();
 
   // Shuffle progress: how many cards remain in this round
@@ -739,12 +737,8 @@ function renderStudy() {
 
   // Stats
   if (pool.length > 0) {
-    var sessionTotal = S.sessionKnown + S.sessionUnknown;
     html += '<div class="stats-bar">' +
-      '<span class="pill"><span class="dot k"></span>' + known + ' known</span>' +
-      '<span class="pill"><span class="dot n"></span>' + fresh + ' new</span>' +
-      '<span class="pill">' + pool.length + ' cards</span>' +
-      '<span class="session-pill" style="margin-left:auto">' +
+      '<span class="session-pill">' +
         '<span class="s-k">✓' + S.sessionKnown + '</span>' +
         '<span class="session-sep"> / </span>' +
         '<span class="s-u">✗' + S.sessionUnknown + '</span>' +
