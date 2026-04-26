@@ -224,14 +224,14 @@
     .card {
       width: 100%;
       min-height: 210px;
-      position: relative;
+      display: grid;
       transform-style: preserve-3d;
       transition: transform 0.45s cubic-bezier(.4,0,.2,1);
       cursor: pointer;
     }
     .card.flipped { transform: rotateY(180deg); }
     .card-face {
-      position: absolute;
+      grid-area: 1 / 1;
       width: 100%;
       min-height: 210px;
       backface-visibility: hidden;
@@ -513,7 +513,8 @@ var S = {
   addMsg:       '',       // feedback from add-card form
   managePage:   0,       // current page in the manage list
   sessionKnown:   0,     // "Know it" clicks this session
-  sessionUnknown: 0      // "Don't know" clicks this session
+  sessionUnknown: 0,     // "Don't know" clicks this session
+  sessionKnownIds: {}    // {[id]: true} cards not to show again this session
 };
 
 // ── Gist API ─────────────────────────────────────────────────────────────────
@@ -577,8 +578,10 @@ function initGist() {
 // ── Card logic ────────────────────────────────────────────────────────────────
 
 function filteredPool() {
-  if (!S.filterLabel) return S.cards;
-  return S.cards.filter(function(c) { return c.label === S.filterLabel; });
+  var pool = S.filterLabel
+    ? S.cards.filter(function(c) { return c.label === S.filterLabel; })
+    : S.cards;
+  return pool.filter(function(c) { return !S.sessionKnownIds[c.id]; });
 }
 
 function weight(c) {
@@ -659,7 +662,7 @@ function delCard(id) {
 
 function markCard(known) {
   if (!S.current) return;
-  if (known) { S.current.known = (S.current.known || 0) + 1; S.sessionKnown++; }
+  if (known) { S.current.known = (S.current.known || 0) + 1; S.sessionKnown++; S.sessionKnownIds[S.current.id] = true; }
   else { S.current.unknown = (S.current.unknown || 0) + 1; S.sessionUnknown++; }
   S.lastId = S.current.id;
   S.current = nextCard();
@@ -747,8 +750,15 @@ function renderStudy() {
       '</div>';
   }
 
+  var allInScope = S.filterLabel
+    ? S.cards.filter(function(c) { return c.label === S.filterLabel; })
+    : S.cards;
+  var sessionDone = !pool.length && allInScope.length > 0;
+
   if (!S.current || !pool.find(function(c) { return c.id === S.current.id; })) {
-    if (!pool.length && S.filterLabel) {
+    if (sessionDone) {
+      html += '<div class="empty-state"><h3>All done!</h3><p>You knew every card. Tap ↺ to start over.</p></div>';
+    } else if (!pool.length && S.filterLabel) {
       html += '<div class="empty-state"><h3>No cards in "' + esc(S.filterLabel) + '"</h3><p>Add some cards with this label in the Cards tab.</p></div>';
     } else {
       html += '<div class="empty-state"><h3>No cards yet</h3><p>Go to Cards tab to add words.</p></div>';
@@ -914,6 +924,11 @@ function setManagePage(p) {
 function resetSession() {
   S.sessionKnown = 0;
   S.sessionUnknown = 0;
+  S.sessionKnownIds = {};
+  S.shuffleQueue = [];
+  S.lastId = null;
+  S.current = nextCard();
+  S.flipped = false;
   render();
 }
 
@@ -1020,7 +1035,7 @@ function connect() {
 
 function resetToken() {
   S.token = ''; S.gistId = ''; S.cards = []; S.current = null; S.err = '';
-  S.filterLabel = ''; S.manageFilter = ''; S.shuffleMode = false; S.shuffleQueue = []; S.direction = 'en-ru'; S.importOpen = false; S.importMsg = ''; S.addMsg = ''; S.managePage = 0; S.sessionKnown = 0; S.sessionUnknown = 0;
+  S.filterLabel = ''; S.manageFilter = ''; S.shuffleMode = false; S.shuffleQueue = []; S.direction = 'en-ru'; S.importOpen = false; S.importMsg = ''; S.addMsg = ''; S.managePage = 0; S.sessionKnown = 0; S.sessionUnknown = 0; S.sessionKnownIds = {};
   localStorage.removeItem('fc_token');
   localStorage.removeItem('fc_gist_id');
   render(); updateNav();
