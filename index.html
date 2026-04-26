@@ -458,6 +458,40 @@
       flex-shrink: 0;
     }
 
+    /* ── Stopwatch ── */
+    .stopwatch {
+      width: 100%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 12px;
+      padding: 10px 0 2px;
+      border-top: 1px solid var(--border);
+      margin-top: 4px;
+    }
+    .stopwatch-time {
+      font-size: 15px;
+      font-weight: 600;
+      font-variant-numeric: tabular-nums;
+      letter-spacing: 0.5px;
+      color: var(--text-muted);
+      min-width: 64px;
+      text-align: center;
+    }
+    .sw-btn {
+      padding: 4px 14px;
+      border-radius: 20px;
+      border: 1px solid var(--border);
+      background: var(--surface);
+      color: var(--text-muted);
+      font-size: 13px;
+      font-weight: 500;
+      cursor: pointer;
+      transition: all 0.15s;
+    }
+    .sw-btn:hover { border-color: var(--primary); color: var(--primary); }
+    .sw-btn.running { background: var(--primary); color: #fff; border-color: var(--primary); }
+
     /* Pagination */
     .pagination {
       display: flex;
@@ -514,7 +548,10 @@ var S = {
   managePage:   0,       // current page in the manage list
   sessionKnown:   0,     // "Know it" clicks this session
   sessionUnknown: 0,     // "Don't know" clicks this session
-  sessionKnownIds: {}    // {[id]: true} cards not to show again this session
+  sessionKnownIds: {},   // {[id]: true} cards not to show again this session
+  swRunning:  false,     // stopwatch running?
+  swElapsed:  0,         // ms accumulated before last start
+  swStarted:  0          // Date.now() when last started
 };
 
 // ── Gist API ─────────────────────────────────────────────────────────────────
@@ -788,8 +825,17 @@ function renderStudy() {
       html += '<button class="skip-btn" onclick="skip()">Skip →</button>';
     }
   }
+  html += renderStopwatch();
   html += '</div>';
   return html;
+}
+
+function renderStopwatch() {
+  return '<div class="stopwatch">' +
+    '<span class="stopwatch-time" id="sw-display">' + fmtTime(swCurrentMs()) + '</span>' +
+    '<button class="sw-btn' + (S.swRunning ? ' running' : '') + '" onclick="swToggle()">' + (S.swRunning ? 'Pause' : 'Start') + '</button>' +
+    '<button class="sw-btn" onclick="swReset()">Reset</button>' +
+    '</div>';
 }
 
 function renderManage() {
@@ -884,11 +930,65 @@ function renderManage() {
   return html;
 }
 
+// ── Stopwatch ─────────────────────────────────────────────────────────────────
+
+var swTimer = null;
+
+function swCurrentMs() {
+  if (!S.swRunning) return S.swElapsed;
+  return S.swElapsed + (Date.now() - S.swStarted);
+}
+
+function fmtTime(ms) {
+  var total = Math.floor(ms / 1000);
+  var h = Math.floor(total / 3600);
+  var m = Math.floor((total % 3600) / 60);
+  var s = total % 60;
+  if (h > 0) return pad(h) + ':' + pad(m) + ':' + pad(s);
+  return pad(m) + ':' + pad(s);
+}
+
+function pad(n) { return n < 10 ? '0' + n : '' + n; }
+
+function swTick() {
+  var el = document.getElementById('sw-display');
+  if (el) el.textContent = fmtTime(swCurrentMs());
+}
+
+function swToggle() {
+  if (S.swRunning) {
+    S.swElapsed = swCurrentMs();
+    S.swRunning = false;
+    clearInterval(swTimer);
+    swTimer = null;
+  } else {
+    S.swStarted = Date.now();
+    S.swRunning = true;
+    swTimer = setInterval(swTick, 500);
+  }
+  render();
+}
+
+function swReset() {
+  S.swRunning = false;
+  S.swElapsed = 0;
+  S.swStarted = 0;
+  clearInterval(swTimer);
+  swTimer = null;
+  render();
+}
+
 // ── Actions ───────────────────────────────────────────────────────────────────
 
 function showView(v) {
   S.view = v; S.err = ''; S.addMsg = '';
   if (v === 'study' && !S.current) { S.current = nextCard(); S.flipped = false; }
+  if (v !== 'study' && S.swRunning) {
+    S.swElapsed = swCurrentMs();
+    S.swRunning = false;
+    clearInterval(swTimer);
+    swTimer = null;
+  }
   render(); updateNav();
 }
 
