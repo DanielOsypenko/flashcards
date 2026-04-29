@@ -535,6 +535,23 @@
     .page-btn:disabled { opacity: 0.35; cursor: not-allowed; }
     .page-info { font-size: 13px; color: var(--text-muted); }
 
+    /* ── Stats ── */
+    .stats-area { width: 100%; display: flex; flex-direction: column; gap: 16px; }
+    .chart-wrap {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 14px;
+      padding: 16px 12px 12px;
+    }
+    .chart-title { font-size: 13px; font-weight: 600; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 10px; }
+    .chart-legend { display: flex; gap: 14px; font-size: 12px; color: var(--text-muted); margin-top: 10px; align-items: center; }
+    .legend-dot { width: 8px; height: 8px; border-radius: 50%; display: inline-block; margin-right: 4px; flex-shrink: 0; }
+    .summary-row { display: flex; gap: 8px; }
+    .summary-card { flex: 1; background: var(--surface); border: 1px solid var(--border); border-radius: 12px; padding: 12px 8px; text-align: center; }
+    .summary-card .s-val { font-size: 20px; font-weight: 700; display: block; }
+    .summary-card .s-lbl { font-size: 10px; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.4px; display: block; margin-top: 3px; }
+    .metric-tabs { display: flex; gap: 6px; }
+
     /* ── Mobile adjustments (≤ 480px) ── */
     @media (max-width: 480px) {
       header { padding: 10px 14px; }
@@ -585,10 +602,15 @@ var S = {
   studyMode:  'vocab',   // 'vocab' | 'situation'
   addType:    'vocab',   // type selected in the add-card form
   manageTypeFilter: '',  // '' | 'vocab' | 'situation'
-  swRunning:  false,     // stopwatch running?
-  swElapsed:  0,         // ms accumulated before last start
-  swStarted:  0          // Date.now() when last started
+  swRunning:   false,    // stopwatch running?
+  swElapsed:   0,        // ms accumulated before last start
+  swStarted:   0,        // Date.now() when last started
+  statsPeriod: 7,        // days shown in chart: 7 | 14 | 30
+  statsMode:   '',       // filter: '' | 'vocab' | 'situation'
+  statsMetric: 'cards'   // 'cards' | 'time'
 };
+
+var stats = JSON.parse(localStorage.getItem('fc_stats') || '[]');
 
 // ── Gist API ─────────────────────────────────────────────────────────────────
 
@@ -768,7 +790,9 @@ function render() {
   var root = document.getElementById('root');
   if (S.view === 'token' && !S.token) { S.view = 'study'; }
   if (!S.token || S.view === 'token') { root.innerHTML = renderSetup(); return; }
-  root.innerHTML = S.view === 'study' ? renderStudy() : renderManage();
+  root.innerHTML = S.view === 'study'  ? renderStudy()  :
+                   S.view === 'manage' ? renderManage() :
+                   S.view === 'stats'  ? renderStats()  : renderSetup();
 }
 
 function renderSetup() {
@@ -1011,6 +1035,187 @@ function renderManage() {
   return html;
 }
 
+// ── Statistics ────────────────────────────────────────────────────────────────
+
+function todayStr() {
+  var d = new Date();
+  return d.getFullYear() + '-' + pad(d.getMonth() + 1) + '-' + pad(d.getDate());
+}
+
+function recordSession() {
+  if (swCurrentMs() === 0) return;
+  stats.push({
+    date:    todayStr(),
+    duration: swCurrentMs(),
+    known:   S.sessionKnown,
+    unknown: S.sessionUnknown,
+    mode:    S.studyMode
+  });
+  localStorage.setItem('fc_stats', JSON.stringify(stats));
+}
+
+function aggregateStats(period, mode) {
+  var days = [];
+  var now = new Date();
+  for (var i = period - 1; i >= 0; i--) {
+    var d = new Date(now);
+    d.setDate(d.getDate() - i);
+    days.push(d.getFullYear() + '-' + pad(d.getMonth() + 1) + '-' + pad(d.getDate()));
+  }
+  var byDate = {};
+  days.forEach(function(dt) { byDate[dt] = { date: dt, duration: 0, known: 0, unknown: 0, sessions: 0 }; });
+  stats.forEach(function(r) {
+    if (!byDate[r.date]) return;
+    if (mode && r.mode !== mode) return;
+    byDate[r.date].duration += r.duration;
+    byDate[r.date].known    += r.known;
+    byDate[r.date].unknown  += r.unknown;
+    byDate[r.date].sessions += 1;
+  });
+  return days.map(function(dt) { return byDate[dt]; });
+}
+
+function fmtDateLabel(dateStr, period) {
+  var parts = dateStr.split('-');
+  var months = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+  return months[parseInt(parts[1], 10) - 1] + ' ' + parseInt(parts[2], 10);
+}
+
+function buildChartSVG(days, metric) {
+  var W = 400, H = 220;
+  var ml = 38, mr = 8, mt = 10, mb = 32;
+  var cw = W - ml - mr, ch = H - mt - mb;
+
+  var vals = days.map(function(d) {
+    if (metric === 'time') return Math.round(d.duration / 60000);
+    return d.known + d.unknown;
+  });
+  var valsK = days.map(function(d) { return d.known; });
+  var valsU = days.map(function(d) { return d.unknown; });
+
+  var maxVal = metric === 'time'
+    ? Math.max(1, Math.max.apply(null, vals))
+    : Math.max(1, Math.max.apply(null, valsK.concat(valsU)));
+
+  var n = days.length;
+  function xOf(i) { return ml + (n <= 1 ? cw / 2 : i * cw / (n - 1)); }
+  function yOf(v) { return mt + ch - (v / maxVal) * ch; }
+
+  var svg = '<svg width="100%" viewBox="0 0 ' + W + ' ' + H + '" xmlns="http://www.w3.org/2000/svg" style="display:block;overflow:visible">';
+
+  // Grid lines + Y labels
+  var gridSteps = 4;
+  for (var gi = 0; gi <= gridSteps; gi++) {
+    var gv = Math.round((maxVal / gridSteps) * gi);
+    var gy = yOf(gv);
+    svg += '<line x1="' + ml + '" y1="' + gy + '" x2="' + (W - mr) + '" y2="' + gy + '" stroke="var(--border)" stroke-width="1" stroke-dasharray="3,3"/>';
+    svg += '<text x="' + (ml - 4) + '" y="' + (gy + 4) + '" text-anchor="end" font-size="10" fill="var(--text-muted)">' + gv + '</text>';
+  }
+
+  // Zero line
+  svg += '<line x1="' + ml + '" y1="' + (mt + ch) + '" x2="' + (W - mr) + '" y2="' + (mt + ch) + '" stroke="var(--border)" stroke-width="1"/>';
+
+  var allZero = vals.every(function(v) { return v === 0; });
+
+  if (allZero) {
+    svg += '<text x="' + (W / 2) + '" y="' + (H / 2) + '" text-anchor="middle" font-size="13" fill="var(--text-muted)">No data yet</text>';
+  } else if (metric === 'time') {
+    // Single blue line
+    var pts = days.map(function(d, i) { return xOf(i) + ',' + yOf(Math.round(d.duration / 60000)); }).join(' ');
+    svg += '<polyline points="' + pts + '" fill="none" stroke="var(--primary)" stroke-width="2" stroke-linejoin="round"/>';
+    days.forEach(function(d, i) {
+      var v = Math.round(d.duration / 60000);
+      if (v > 0) svg += '<circle cx="' + xOf(i) + '" cy="' + yOf(v) + '" r="3" fill="var(--primary)"/>';
+    });
+  } else {
+    // Known line (green)
+    var ptsK = days.map(function(d, i) { return xOf(i) + ',' + yOf(d.known); }).join(' ');
+    svg += '<polyline points="' + ptsK + '" fill="none" stroke="var(--known)" stroke-width="2" stroke-linejoin="round"/>';
+    days.forEach(function(d, i) {
+      if (d.known > 0) svg += '<circle cx="' + xOf(i) + '" cy="' + yOf(d.known) + '" r="3" fill="var(--known)"/>';
+    });
+    // Unknown line (red)
+    var ptsU = days.map(function(d, i) { return xOf(i) + ',' + yOf(d.unknown); }).join(' ');
+    svg += '<polyline points="' + ptsU + '" fill="none" stroke="var(--unknown)" stroke-width="2" stroke-linejoin="round"/>';
+    days.forEach(function(d, i) {
+      if (d.unknown > 0) svg += '<circle cx="' + xOf(i) + '" cy="' + yOf(d.unknown) + '" r="3" fill="var(--unknown)"/>';
+    });
+  }
+
+  // X-axis labels
+  var step = n > 14 ? 2 : 1;
+  days.forEach(function(d, i) {
+    if (i % step !== 0 && i !== n - 1) return;
+    svg += '<text x="' + xOf(i) + '" y="' + (mt + ch + 18) + '" text-anchor="middle" font-size="9" fill="var(--text-muted)">' + fmtDateLabel(d.date, n) + '</text>';
+  });
+
+  svg += '</svg>';
+  return svg;
+}
+
+function renderStats() {
+  var period = S.statsPeriod;
+  var mode   = S.statsMode;
+  var metric = S.statsMetric;
+  var days   = aggregateStats(period, mode);
+
+  var totalSessions = 0, totalMs = 0, totalKnown = 0, totalUnknown = 0;
+  var filtered = mode ? stats.filter(function(r) { return r.mode === mode; }) : stats;
+  var cutoff = days[0].date;
+  filtered.forEach(function(r) {
+    if (r.date < cutoff) return;
+    totalSessions++;
+    totalMs      += r.duration;
+    totalKnown   += r.known;
+    totalUnknown += r.unknown;
+  });
+  var totalMins = Math.round(totalMs / 60000);
+
+  var html = '<div class="stats-area">';
+  html += '<div id="saving-lbl" class="saving"></div>';
+
+  // Period + mode filters
+  html += '<div class="filter-pills">';
+  [7, 14, 30].forEach(function(p) {
+    html += '<button class="fpill' + (period === p ? ' active' : '') + '" onclick="setStatsPeriod(' + p + ')">' + p + 'd</button>';
+  });
+  html += '<button class="fpill' + (!mode ? ' active' : '') + '" onclick="setStatsMode(\'\')">All</button>';
+  html += '<button class="fpill' + (mode === 'vocab' ? ' active' : '') + '" onclick="setStatsMode(\'vocab\')">Vocab</button>';
+  html += '<button class="fpill' + (mode === 'situation' ? ' active' : '') + '" onclick="setStatsMode(\'situation\')">Situations</button>';
+  html += '</div>';
+
+  // Metric toggle
+  html += '<div class="metric-tabs">';
+  html += '<button class="fpill' + (metric === 'cards' ? ' active' : '') + '" onclick="setStatsMetric(\'cards\')">Cards</button>';
+  html += '<button class="fpill' + (metric === 'time' ? ' active' : '') + '" onclick="setStatsMetric(\'time\')">Time (min)</button>';
+  html += '</div>';
+
+  // Chart
+  html += '<div class="chart-wrap">';
+  html += '<div class="chart-title">' + (metric === 'time' ? 'Minutes studied per day' : 'Cards per day') + '</div>';
+  html += buildChartSVG(days, metric);
+  if (metric === 'cards') {
+    html += '<div class="chart-legend">' +
+      '<span><span class="legend-dot" style="background:var(--known)"></span>Known</span>' +
+      '<span><span class="legend-dot" style="background:var(--unknown)"></span>Don\'t know</span>' +
+      '</div>';
+  } else {
+    html += '<div class="chart-legend"><span><span class="legend-dot" style="background:var(--primary)"></span>Minutes</span></div>';
+  }
+  html += '</div>';
+
+  // Summary cards
+  html += '<div class="summary-row">';
+  html += '<div class="summary-card"><span class="s-val">' + totalSessions + '</span><span class="s-lbl">Sessions</span></div>';
+  html += '<div class="summary-card"><span class="s-val">' + totalMins + '</span><span class="s-lbl">Minutes</span></div>';
+  html += '<div class="summary-card"><span class="s-val s-k">' + totalKnown + '</span><span class="s-lbl">Known</span></div>';
+  html += '<div class="summary-card"><span class="s-val s-u">' + totalUnknown + '</span><span class="s-lbl">Unknown</span></div>';
+  html += '</div>';
+
+  html += '</div>';
+  return html;
+}
+
 // ── Stopwatch ─────────────────────────────────────────────────────────────────
 
 var swTimer = null;
@@ -1042,6 +1247,7 @@ function swToggle() {
     S.swRunning = false;
     clearInterval(swTimer);
     swTimer = null;
+    recordSession();
   } else {
     S.swStarted = Date.now();
     S.swRunning = true;
@@ -1051,6 +1257,7 @@ function swToggle() {
 }
 
 function swReset() {
+  recordSession();
   S.swRunning = false;
   S.swElapsed = 0;
   S.swStarted = 0;
@@ -1069,6 +1276,7 @@ function showView(v) {
     S.swRunning = false;
     clearInterval(swTimer);
     swTimer = null;
+    recordSession();
   }
   render(); updateNav();
 }
@@ -1109,6 +1317,10 @@ function setAddType(t) {
   S.addMsg = '';
   render();
 }
+
+function setStatsPeriod(p) { S.statsPeriod = p; render(); }
+function setStatsMode(m)   { S.statsMode = m;   render(); }
+function setStatsMetric(m) { S.statsMetric = m; render(); }
 
 function showStudyMode(mode) {
   S.studyMode = mode;
@@ -1267,7 +1479,7 @@ function connect() {
 
 function resetToken() {
   S.token = ''; S.gistId = ''; S.cards = []; S.current = null; S.err = '';
-  S.filterLabel = ''; S.manageFilter = ''; S.manageTypeFilter = ''; S.shuffleMode = false; S.shuffleQueue = []; S.direction = 'en-ru'; S.importOpen = false; S.importMsg = ''; S.addMsg = ''; S.managePage = 0; S.sessionKnown = 0; S.sessionUnknown = 0; S.sessionKnownIds = {}; S.studyMode = 'vocab'; S.addType = 'vocab';
+  S.filterLabel = ''; S.manageFilter = ''; S.manageTypeFilter = ''; S.shuffleMode = false; S.shuffleQueue = []; S.direction = 'en-ru'; S.importOpen = false; S.importMsg = ''; S.addMsg = ''; S.managePage = 0; S.sessionKnown = 0; S.sessionUnknown = 0; S.sessionKnownIds = {}; S.studyMode = 'vocab'; S.addType = 'vocab'; S.statsPeriod = 7; S.statsMode = ''; S.statsMetric = 'cards';
   localStorage.removeItem('fc_token');
   localStorage.removeItem('fc_gist_id');
   render(); updateNav();
@@ -1288,6 +1500,7 @@ function updateNav() {
         '<button class="' + (studyActive ? 'active' : '') + '" onclick="showStudyMode(\'vocab\')">Study</button>' +
         '<button class="' + (sitActive   ? 'active' : '') + '" onclick="showStudyMode(\'situation\')">Situations</button>' +
         '<button class="' + (S.view === 'manage' ? 'active' : '') + '" onclick="showView(\'manage\')">Cards</button>' +
+        '<button class="' + (S.view === 'stats'  ? 'active' : '') + '" onclick="showView(\'stats\')">Stats</button>' +
         '<button class="reset-btn" onclick="showTokenScreen()" title="Token settings">⚙</button>';
     }
   } else {
