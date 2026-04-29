@@ -54,9 +54,9 @@
     }
     header h1 { font-size: 17px; font-weight: 700; letter-spacing: -0.3px; }
 
-    nav { display: flex; gap: 6px; align-items: center; }
+    nav { display: flex; gap: 4px; align-items: center; }
     nav button {
-      padding: 6px 16px;
+      padding: 6px 12px;
       border-radius: 20px;
       border: 1px solid var(--border);
       background: transparent;
@@ -68,14 +68,14 @@
     }
     nav button.active { background: var(--primary); color: #fff; border-color: var(--primary); }
     .reset-btn {
-      font-size: 13px;
-      font-weight: 500;
+      font-size: 16px;
       color: var(--text-muted);
       background: none;
       border: 1px solid var(--border);
       cursor: pointer;
-      padding: 6px 12px;
+      padding: 4px 9px;
       border-radius: 20px;
+      line-height: 1;
     }
     .reset-btn:hover { color: var(--unknown); border-color: var(--unknown); }
 
@@ -1231,7 +1231,7 @@ function updateNav() {
       '<button class="' + (studyActive ? 'active' : '') + '" onclick="showStudyMode(\'vocab\')">Study</button>' +
       '<button class="' + (sitActive   ? 'active' : '') + '" onclick="showStudyMode(\'situation\')">Situations</button>' +
       '<button class="' + (S.view === 'manage' ? 'active' : '') + '" onclick="showView(\'manage\')">Cards</button>' +
-      '<button class="reset-btn" onclick="resetToken()">Token</button>';
+      '<button class="reset-btn" onclick="resetToken()" title="Reset token">⚙</button>';
   } else {
     nav.innerHTML = '';
   }
