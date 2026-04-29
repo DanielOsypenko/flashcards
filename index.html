@@ -32,6 +32,8 @@
 
     * { box-sizing: border-box; margin: 0; padding: 0; }
 
+    html, body { overflow-x: hidden; }
+
     body {
       font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
       background: var(--bg);
@@ -955,7 +957,7 @@ function renderManage() {
   html += '</div>';
 
   // Type + label filters
-  html += '<div class="manage-controls" style="flex-direction:column;align-items:flex-start;gap:8px">';
+  html += '<div class="manage-controls" style="flex-direction:column;align-items:stretch;gap:8px">';
   html += '<div class="filter-pills">' +
     '<button class="fpill' + (!mtf ? ' active' : '') + '" onclick="setManageTypeFilter(\'\')">All (' + S.cards.length + ')</button>' +
     '<button class="fpill' + (mtf === 'vocab' ? ' active' : '') + '" onclick="setManageTypeFilter(\'vocab\')">Vocab (' + S.cards.filter(isVocab).length + ')</button>' +
