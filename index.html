@@ -175,6 +175,7 @@
     }
     .filter-pills {
       display: flex;
+      flex-wrap: nowrap;
       gap: 6px;
       overflow-x: auto;
       padding-bottom: 2px;
@@ -402,7 +403,7 @@
 
     .manage-controls { display: flex; align-items: center; justify-content: space-between; }
     .section-title { font-size: 13px; font-weight: 600; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.5px; }
-    .manage-filter { display: flex; gap: 6px; overflow-x: auto; scrollbar-width: none; }
+    .manage-filter { display: flex; flex-wrap: nowrap; gap: 6px; overflow-x: auto; scrollbar-width: none; }
     .manage-filter::-webkit-scrollbar { display: none; }
 
     .cards-list { display: flex; flex-direction: column; gap: 8px; }
@@ -531,6 +532,19 @@
     .page-btn:hover:not(:disabled) { border-color: var(--primary); color: var(--primary); }
     .page-btn:disabled { opacity: 0.35; cursor: not-allowed; }
     .page-info { font-size: 13px; color: var(--text-muted); }
+
+    /* ── Mobile adjustments (≤ 480px) ── */
+    @media (max-width: 480px) {
+      header { padding: 10px 14px; }
+      header h1 { font-size: 15px; }
+      nav button { padding: 5px 9px; font-size: 13px; }
+      main { padding: 16px 12px 32px; }
+      .card-word { font-size: 24px; }
+      .action-row .btn { padding: 13px; font-size: 15px; }
+      .add-form { padding: 14px; }
+      .form-row { flex-direction: column; gap: 0; }
+      .import-body { padding: 0 12px 14px; }
+    }
   </style>
 </head>
 <body>
@@ -942,13 +956,10 @@ function renderManage() {
 
   // Type + label filters
   html += '<div class="manage-controls" style="flex-direction:column;align-items:flex-start;gap:8px">';
-  html += '<div style="display:flex;gap:6px;align-items:center;width:100%;justify-content:space-between">' +
-    '<div style="display:flex;gap:6px">' +
-      '<button class="fpill' + (!mtf ? ' active' : '') + '" onclick="setManageTypeFilter(\'\')">All (' + S.cards.length + ')</button>' +
-      '<button class="fpill' + (mtf === 'vocab' ? ' active' : '') + '" onclick="setManageTypeFilter(\'vocab\')">Vocab (' + S.cards.filter(isVocab).length + ')</button>' +
-      '<button class="fpill' + (mtf === 'situation' ? ' active' : '') + '" onclick="setManageTypeFilter(\'situation\')">Situations (' + S.cards.filter(isSituation).length + ')</button>' +
-    '</div>' +
-    '<span class="section-title">' + displayCards.length + ' shown</span>' +
+  html += '<div class="filter-pills">' +
+    '<button class="fpill' + (!mtf ? ' active' : '') + '" onclick="setManageTypeFilter(\'\')">All (' + S.cards.length + ')</button>' +
+    '<button class="fpill' + (mtf === 'vocab' ? ' active' : '') + '" onclick="setManageTypeFilter(\'vocab\')">Vocab (' + S.cards.filter(isVocab).length + ')</button>' +
+    '<button class="fpill' + (mtf === 'situation' ? ' active' : '') + '" onclick="setManageTypeFilter(\'situation\')">Situations (' + S.cards.filter(isSituation).length + ')</button>' +
   '</div>';
   if (labels.length > 0) {
     html += '<div class="manage-filter">' +
