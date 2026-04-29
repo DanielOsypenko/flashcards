@@ -750,6 +750,7 @@ function renderSaving() {
 
 function render() {
   var root = document.getElementById('root');
+  if (S.view === 'token' && !S.token) { S.view = 'study'; }
   if (!S.token || S.view === 'token') { root.innerHTML = renderSetup(); return; }
   root.innerHTML = S.view === 'study' ? renderStudy() : renderManage();
 }
@@ -757,7 +758,6 @@ function render() {
 function renderSetup() {
   var hasSession = !!(S.token);
   return '<div class="setup">' +
-    (hasSession ? '<button class="setup-back" onclick="backFromToken()">← Back</button>' : '') +
     '<h2>' + (hasSession ? 'Token settings' : 'Welcome') + '</h2>' +
     '<p>Cards sync across devices via a private GitHub Gist.<br><br>' +
     'You need a <strong>classic</strong> GitHub token (starts with <code>ghp_</code>) with <strong>gist</strong> scope.<br><br>' +
@@ -1220,7 +1220,7 @@ function showTokenScreen() {
 }
 
 function backFromToken() {
-  S.view = S._prevView || 'study';
+  S.view = (S._prevView && S._prevView !== 'token') ? S._prevView : 'study';
   S.studyMode = S._prevStudyMode || 'vocab';
   S._prevView = null;
   S._prevStudyMode = null;
@@ -1264,13 +1264,19 @@ function updateNav() {
   var nav = document.getElementById('main-nav');
   if (!nav) return;
   if (S.token) {
-    var studyActive = S.view === 'study' && S.studyMode === 'vocab';
-    var sitActive   = S.view === 'study' && S.studyMode === 'situation';
-    nav.innerHTML =
-      '<button class="' + (studyActive ? 'active' : '') + '" onclick="showStudyMode(\'vocab\')">Study</button>' +
-      '<button class="' + (sitActive   ? 'active' : '') + '" onclick="showStudyMode(\'situation\')">Situations</button>' +
-      '<button class="' + (S.view === 'manage' ? 'active' : '') + '" onclick="showView(\'manage\')">Cards</button>' +
-      '<button class="reset-btn' + (S.view === 'token' ? ' active' : '') + '" onclick="showTokenScreen()" title="Token settings">⚙</button>';
+    if (S.view === 'token') {
+      nav.innerHTML =
+        '<button onclick="backFromToken()">← Back</button>' +
+        '<button class="reset-btn active" title="Token settings">⚙</button>';
+    } else {
+      var studyActive = S.view === 'study' && S.studyMode === 'vocab';
+      var sitActive   = S.view === 'study' && S.studyMode === 'situation';
+      nav.innerHTML =
+        '<button class="' + (studyActive ? 'active' : '') + '" onclick="showStudyMode(\'vocab\')">Study</button>' +
+        '<button class="' + (sitActive   ? 'active' : '') + '" onclick="showStudyMode(\'situation\')">Situations</button>' +
+        '<button class="' + (S.view === 'manage' ? 'active' : '') + '" onclick="showView(\'manage\')">Cards</button>' +
+        '<button class="reset-btn" onclick="showTokenScreen()" title="Token settings">⚙</button>';
+    }
   } else {
     nav.innerHTML = '';
   }
