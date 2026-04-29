@@ -414,6 +414,8 @@
       border: 1px solid var(--border);
       white-space: nowrap;
     }
+    .sit-badge { background: #ede9fe; color: #6d28d9; border-color: #c4b5fd; }
+    @media (prefers-color-scheme: dark) { .sit-badge { background: #2e1065; color: #a78bfa; border-color: #4c1d95; } }
     .card-item-score { font-size: 12px; color: var(--text-muted); white-space: nowrap; flex-shrink: 0; }
     .s-k { color: var(--known); }
     .s-u { color: var(--unknown); }
@@ -549,6 +551,9 @@ var S = {
   sessionKnown:   0,     // "Know it" clicks this session
   sessionUnknown: 0,     // "Don't know" clicks this session
   sessionKnownIds: {},   // {[id]: true} cards not to show again this session
+  studyMode:  'vocab',   // 'vocab' | 'situation'
+  addType:    'vocab',   // type selected in the add-card form
+  manageTypeFilter: '',  // '' | 'vocab' | 'situation'
   swRunning:  false,     // stopwatch running?
   swElapsed:  0,         // ms accumulated before last start
   swStarted:  0          // Date.now() when last started
@@ -614,10 +619,14 @@ function initGist() {
 
 // ── Card logic ────────────────────────────────────────────────────────────────
 
+function isSituation(c) { return c.type === 'situation'; }
+function isVocab(c)     { return c.type !== 'situation'; }
+
 function filteredPool() {
+  var typeOk = S.studyMode === 'situation' ? isSituation : isVocab;
   var pool = S.filterLabel
-    ? S.cards.filter(function(c) { return c.label === S.filterLabel; })
-    : S.cards;
+    ? S.cards.filter(function(c) { return typeOk(c) && c.label === S.filterLabel; })
+    : S.cards.filter(typeOk);
   return pool.filter(function(c) { return !S.sessionKnownIds[c.id]; });
 }
 
@@ -671,21 +680,26 @@ function nextCard() {
 
 function uid() { return Date.now().toString(36) + Math.random().toString(36).slice(2, 7); }
 
-function uniqueLabels() {
+function uniqueLabels(typeFilter) {
   var seen = {}, labels = [];
-  S.cards.forEach(function(c) {
+  var typeOk = typeFilter === 'situation' ? isSituation : (typeFilter === 'vocab' ? isVocab : function() { return true; });
+  S.cards.filter(typeOk).forEach(function(c) {
     if (c.label && !seen[c.label]) { seen[c.label] = true; labels.push(c.label); }
   });
   return labels.sort();
 }
 
-function addCard(en, ru, label) {
-  var enNorm = en.trim().toLowerCase();
-  var ruNorm = ru.trim().toLowerCase();
-  if (S.cards.some(function(x) { return x.english.toLowerCase() === enNorm; })) return false;
-  var c = { id: uid(), english: enNorm, russian: ruNorm, label: (label || '').trim(), known: 0, unknown: 0 };
+function addCard(en, ru, label, type) {
+  var t = type === 'situation' ? 'situation' : 'vocab';
+  var enNorm = t === 'situation' ? en.trim() : en.trim().toLowerCase();
+  var ruNorm = t === 'situation' ? ru.trim() : ru.trim().toLowerCase();
+  var dup = S.cards.some(function(x) {
+    return x.type === t && x.english.toLowerCase() === enNorm.toLowerCase();
+  });
+  if (dup) return false;
+  var c = { id: uid(), english: enNorm, russian: ruNorm, label: (label || '').trim(), known: 0, unknown: 0, type: t };
   S.cards.push(c);
-  if (!S.current) S.current = c;
+  if (!S.current && S.studyMode === t) S.current = c;
   scheduleSave();
   return true;
 }
@@ -742,8 +756,11 @@ function renderSetup() {
 
 function renderStudy() {
   var pool = filteredPool();
-  var total = S.cards.length;
-  var labels = uniqueLabels();
+  var isSit = S.studyMode === 'situation';
+  var typeOk = isSit ? isSituation : isVocab;
+  var modeCards = S.cards.filter(typeOk);
+  var total = modeCards.length;
+  var labels = uniqueLabels(S.studyMode);
 
   // Shuffle progress: how many cards remain in this round
   var queueLeft = S.shuffleMode ? S.shuffleQueue.length : 0;
@@ -758,13 +775,15 @@ function renderStudy() {
     html += '<div class="controls-bar"><div class="filter-pills">';
     html += '<button class="fpill' + (!S.filterLabel ? ' active' : '') + '" onclick="setFilter(\'\')">All (' + total + ')</button>';
     labels.forEach(function(lbl) {
-      var cnt = S.cards.filter(function(c) { return c.label === lbl; }).length;
+      var cnt = modeCards.filter(function(c) { return c.label === lbl; }).length;
       html += '<button class="fpill' + (S.filterLabel === lbl ? ' active' : '') + '" onclick="setFilter(\'' + esc(lbl) + '\')">' + esc(lbl) + ' (' + cnt + ')</button>';
     });
     html += '</div>';
     html += '<div class="controls-actions">';
     html += '<button class="shuffle-btn' + (S.shuffleMode ? ' active' : '') + '" onclick="toggleShuffle()">⇄ Shuffle</button>';
-    html += '<button class="shuffle-btn' + (S.direction === 'ru-en' ? ' active' : '') + '" onclick="toggleDirection()" title="Flip card direction">' + (S.direction === 'en-ru' ? 'EN→RU' : 'RU→EN') + '</button>';
+    if (!isSit) {
+      html += '<button class="shuffle-btn' + (S.direction === 'ru-en' ? ' active' : '') + '" onclick="toggleDirection()" title="Flip card direction">' + (S.direction === 'en-ru' ? 'EN→RU' : 'RU→EN') + '</button>';
+    }
     html += '</div></div>';
   }
 
@@ -788,9 +807,13 @@ function renderStudy() {
   }
 
   var allInScope = S.filterLabel
-    ? S.cards.filter(function(c) { return c.label === S.filterLabel; })
-    : S.cards;
+    ? modeCards.filter(function(c) { return c.label === S.filterLabel; })
+    : modeCards;
   var sessionDone = !pool.length && allInScope.length > 0;
+
+  var emptyMsg = isSit
+    ? '<h3>No situations yet</h3><p>Go to Cards tab, pick <strong>Situation</strong> type and add some.</p>'
+    : '<h3>No cards yet</h3><p>Go to Cards tab to add words.</p>';
 
   if (!S.current || !pool.find(function(c) { return c.id === S.current.id; })) {
     if (sessionDone) {
@@ -798,21 +821,25 @@ function renderStudy() {
     } else if (!pool.length && S.filterLabel) {
       html += '<div class="empty-state"><h3>No cards in "' + esc(S.filterLabel) + '"</h3><p>Add some cards with this label in the Cards tab.</p></div>';
     } else {
-      html += '<div class="empty-state"><h3>No cards yet</h3><p>Go to Cards tab to add words.</p></div>';
+      html += '<div class="empty-state">' + emptyMsg + '</div>';
     }
   } else {
     var c = S.current;
+    var frontLang = isSit ? 'Situation' : (S.direction === 'en-ru' ? 'English' : 'Russian');
+    var backLang  = isSit ? 'Feeling'   : (S.direction === 'en-ru' ? 'Russian'  : 'English');
+    var frontWord = isSit ? c.english   : (S.direction === 'en-ru' ? c.english  : c.russian);
+    var backWord  = isSit ? c.russian   : (S.direction === 'en-ru' ? c.russian  : c.english);
     html += '<div class="card-container">' +
       '<div class="card' + (S.flipped ? ' flipped' : '') + '" onclick="flip()" id="fc">' +
         '<div class="card-face">' +
-          '<div class="card-lang">' + (S.direction === 'en-ru' ? 'English' : 'Russian') + '</div>' +
-          '<div class="card-word">' + esc(S.direction === 'en-ru' ? c.english : c.russian) + '</div>' +
+          '<div class="card-lang">' + frontLang + '</div>' +
+          '<div class="card-word">' + esc(frontWord) + '</div>' +
           (c.label ? '<div class="card-tag">' + esc(c.label) + '</div>' : '') +
           '<div class="card-hint">tap to reveal</div>' +
         '</div>' +
         '<div class="card-face card-back">' +
-          '<div class="card-lang">' + (S.direction === 'en-ru' ? 'Russian' : 'English') + '</div>' +
-          '<div class="card-word">' + esc(S.direction === 'en-ru' ? c.russian : c.english) + '</div>' +
+          '<div class="card-lang">' + backLang + '</div>' +
+          '<div class="card-word">' + esc(backWord) + '</div>' +
         '</div>' +
       '</div></div>';
 
@@ -839,24 +866,38 @@ function renderStopwatch() {
 }
 
 function renderManage() {
-  var labels = uniqueLabels();
+  var mtf = S.manageTypeFilter;
+  var typePool = mtf === 'situation' ? S.cards.filter(isSituation)
+               : mtf === 'vocab'     ? S.cards.filter(isVocab)
+               : S.cards;
+  var labels = uniqueLabels(mtf || null);
   var displayCards = S.manageFilter
-    ? S.cards.filter(function(c) { return c.label === S.manageFilter; })
-    : S.cards;
+    ? typePool.filter(function(c) { return c.label === S.manageFilter; })
+    : typePool;
   var sorted = displayCards.slice().sort(function(a,b){ return (b.unknown||0)-(a.unknown||0); });
+
+  var isSit = S.addType === 'situation';
+  var fldA = isSit ? 'Situation' : 'English';
+  var fldB = isSit ? 'Feeling / Response' : 'Russian';
+  var phA  = isSit ? 'the shop is closed' : 'to procrastinate';
+  var phB  = isSit ? 'frustrating' : 'откладывать';
 
   var html = '<div class="manage-area">';
   html += '<div id="saving-lbl" class="saving"></div>';
   if (S.err) html += '<div class="error-banner">' + esc(S.err) + '</div>';
 
   html += '<div class="add-form"><h3>Add card</h3>' +
-    '<div class="form-row">' +
-      '<div class="form-group"><label>English</label><input id="inp-en" type="text" placeholder="to procrastinate" /></div>' +
-      '<div class="form-group"><label>Russian</label><input id="inp-ru" type="text" placeholder="откладывать" /></div>' +
+    '<div style="display:flex;gap:6px;margin-bottom:14px">' +
+      '<button class="fpill' + (!isSit ? ' active' : '') + '" onclick="setAddType(\'vocab\')">Vocab</button>' +
+      '<button class="fpill' + (isSit ? ' active' : '') + '" onclick="setAddType(\'situation\')">Situation</button>' +
     '</div>' +
-    '<div class="form-group"><label>Label <span style="font-weight:400;text-transform:none">(optional, e.g. verb, adjective)</span></label>' +
-    '<input id="inp-lbl" type="text" list="label-suggestions" placeholder="verb" />' +
-    '<datalist id="label-suggestions">' + labels.map(function(l) { return '<option value="' + esc(l) + '">'; }).join('') + '</datalist>' +
+    '<div class="form-row">' +
+      '<div class="form-group"><label>' + fldA + '</label><input id="inp-en" type="text" placeholder="' + phA + '" /></div>' +
+      '<div class="form-group"><label>' + fldB + '</label><input id="inp-ru" type="text" placeholder="' + phB + '" /></div>' +
+    '</div>' +
+    '<div class="form-group"><label>Label <span style="font-weight:400;text-transform:none">(optional)</span></label>' +
+    '<input id="inp-lbl" type="text" list="label-suggestions" placeholder="e.g. emotions" />' +
+    '<datalist id="label-suggestions">' + uniqueLabels(S.addType).map(function(l) { return '<option value="' + esc(l) + '">'; }).join('') + '</datalist>' +
     '</div>' +
     '<button class="btn btn-primary btn-full" onclick="submitCard()">Add</button>' +
     (S.addMsg ? '<div class="' + (S.addMsg[0] === '✓' ? 'import-msg-ok' : 'import-msg-err') + '" style="margin-top:10px">' + esc(S.addMsg) + '</div>' : '') +
@@ -881,19 +922,25 @@ function renderManage() {
   }
   html += '</div>';
 
-  // Manage filter
+  // Type + label filters
+  html += '<div class="manage-controls" style="flex-direction:column;align-items:flex-start;gap:8px">';
+  html += '<div style="display:flex;gap:6px;align-items:center;width:100%;justify-content:space-between">' +
+    '<div style="display:flex;gap:6px">' +
+      '<button class="fpill' + (!mtf ? ' active' : '') + '" onclick="setManageTypeFilter(\'\')">All (' + S.cards.length + ')</button>' +
+      '<button class="fpill' + (mtf === 'vocab' ? ' active' : '') + '" onclick="setManageTypeFilter(\'vocab\')">Vocab (' + S.cards.filter(isVocab).length + ')</button>' +
+      '<button class="fpill' + (mtf === 'situation' ? ' active' : '') + '" onclick="setManageTypeFilter(\'situation\')">Situations (' + S.cards.filter(isSituation).length + ')</button>' +
+    '</div>' +
+    '<span class="section-title">' + displayCards.length + ' shown</span>' +
+  '</div>';
   if (labels.length > 0) {
-    html += '<div class="manage-controls">' +
-      '<div class="section-title">' + displayCards.length + ' / ' + S.cards.length + ' cards</div>' +
-      '<div class="manage-filter">' +
-      '<button class="fpill' + (!S.manageFilter ? ' active' : '') + '" onclick="setManageFilter(\'\')">All</button>';
+    html += '<div class="manage-filter">' +
+      '<button class="fpill' + (!S.manageFilter ? ' active' : '') + '" onclick="setManageFilter(\'\')">All labels</button>';
     labels.forEach(function(lbl) {
       html += '<button class="fpill' + (S.manageFilter === lbl ? ' active' : '') + '" onclick="setManageFilter(\'' + esc(lbl) + '\')">' + esc(lbl) + '</button>';
     });
-    html += '</div></div>';
-  } else {
-    html += '<div class="section-title">' + S.cards.length + ' card' + (S.cards.length !== 1 ? 's' : '') + '</div>';
+    html += '</div>';
   }
+  html += '</div>';
 
   var PAGE_SIZE = 20;
   var totalPages = Math.max(1, Math.ceil(sorted.length / PAGE_SIZE));
@@ -909,7 +956,10 @@ function renderManage() {
         '<div class="card-item-text">' +
           '<div class="card-item-en">' + esc(c.english) + '</div>' +
           '<div class="card-item-ru">' + esc(c.russian) + '</div>' +
-          (c.label ? '<div class="card-item-meta"><span class="label-badge">' + esc(c.label) + '</span></div>' : '') +
+          '<div class="card-item-meta">' +
+            (c.type === 'situation' ? '<span class="label-badge sit-badge">situation</span>' : '') +
+            (c.label ? '<span class="label-badge">' + esc(c.label) + '</span>' : '') +
+          '</div>' +
         '</div>' +
         '<div class="card-item-score"><span class="s-k">✓' + (c.known||0) + '</span> <span class="s-u">✗' + (c.unknown||0) + '</span></div>' +
         '<button class="del-btn" onclick="delCard(\'' + c.id + '\')">×</button>' +
@@ -1016,6 +1066,32 @@ function setManageFilter(label) {
   render();
 }
 
+function setManageTypeFilter(t) {
+  S.manageTypeFilter = t;
+  S.manageFilter = '';
+  S.managePage = 0;
+  render();
+}
+
+function setAddType(t) {
+  S.addType = t;
+  S.addMsg = '';
+  render();
+}
+
+function showStudyMode(mode) {
+  S.studyMode = mode;
+  S.filterLabel = '';
+  S.shuffleQueue = [];
+  S.lastId = null;
+  S.flipped = false;
+  S.sessionKnown = 0;
+  S.sessionUnknown = 0;
+  S.sessionKnownIds = {};
+  S.current = nextCard();
+  showView('study');
+}
+
 function setManagePage(p) {
   S.managePage = p;
   render();
@@ -1103,9 +1179,9 @@ function submitCard() {
   var ru = document.getElementById('inp-ru');
   var lbl = document.getElementById('inp-lbl');
   if (!en || !ru) return;
-  if (!en.value.trim() || !ru.value.trim()) { S.addMsg = '✗ Fill English and Russian fields'; render(); return; }
-  var ok = addCard(en.value, ru.value, lbl ? lbl.value : '');
-  if (!ok) { S.addMsg = '✗ "' + en.value.trim().toLowerCase() + '" already exists'; render(); return; }
+  if (!en.value.trim() || !ru.value.trim()) { S.addMsg = '✗ Fill both fields'; render(); return; }
+  var ok = addCard(en.value, ru.value, lbl ? lbl.value : '', S.addType);
+  if (!ok) { S.addMsg = '✗ "' + en.value.trim() + '" already exists'; render(); return; }
   S.addMsg = '';
   en.value = ''; ru.value = '';
   if (lbl) lbl.value = '';
@@ -1135,7 +1211,7 @@ function connect() {
 
 function resetToken() {
   S.token = ''; S.gistId = ''; S.cards = []; S.current = null; S.err = '';
-  S.filterLabel = ''; S.manageFilter = ''; S.shuffleMode = false; S.shuffleQueue = []; S.direction = 'en-ru'; S.importOpen = false; S.importMsg = ''; S.addMsg = ''; S.managePage = 0; S.sessionKnown = 0; S.sessionUnknown = 0; S.sessionKnownIds = {};
+  S.filterLabel = ''; S.manageFilter = ''; S.manageTypeFilter = ''; S.shuffleMode = false; S.shuffleQueue = []; S.direction = 'en-ru'; S.importOpen = false; S.importMsg = ''; S.addMsg = ''; S.managePage = 0; S.sessionKnown = 0; S.sessionUnknown = 0; S.sessionKnownIds = {}; S.studyMode = 'vocab'; S.addType = 'vocab';
   localStorage.removeItem('fc_token');
   localStorage.removeItem('fc_gist_id');
   render(); updateNav();
@@ -1145,9 +1221,12 @@ function updateNav() {
   var nav = document.getElementById('main-nav');
   if (!nav) return;
   if (S.token) {
+    var studyActive = S.view === 'study' && S.studyMode === 'vocab';
+    var sitActive   = S.view === 'study' && S.studyMode === 'situation';
     nav.innerHTML =
-      '<button id="btn-study" class="' + (S.view==='study'?'active':'') + '" onclick="showView(\'study\')">Study</button>' +
-      '<button id="btn-manage" class="' + (S.view==='manage'?'active':'') + '" onclick="showView(\'manage\')">Cards</button>' +
+      '<button class="' + (studyActive ? 'active' : '') + '" onclick="showStudyMode(\'vocab\')">Study</button>' +
+      '<button class="' + (sitActive   ? 'active' : '') + '" onclick="showStudyMode(\'situation\')">Situations</button>' +
+      '<button class="' + (S.view === 'manage' ? 'active' : '') + '" onclick="showView(\'manage\')">Cards</button>' +
       '<button class="reset-btn" onclick="resetToken()">Token</button>';
   } else {
     nav.innerHTML = '';
