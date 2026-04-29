@@ -1144,11 +1144,15 @@ function doImport(raw) {
   var added = 0, skipped = 0;
   items.forEach(function(c) {
     if (!c.english || !c.russian) { skipped++; return; }
+    var importType = c.type === 'situation' ? 'situation' : 'vocab';
     var dup = S.cards.some(function(x) {
-      return x.english.toLowerCase() === c.english.trim().toLowerCase();
+      return x.type === importType && x.english.toLowerCase() === c.english.trim().toLowerCase();
     });
     if (dup) { skipped++; return; }
-    S.cards.push({ id: uid(), english: c.english.trim().toLowerCase(), russian: c.russian.trim().toLowerCase(), label: (c.label || '').trim(), known: 0, unknown: 0 });
+    var t = c.type === 'situation' ? 'situation' : 'vocab';
+    var enVal = t === 'situation' ? c.english.trim() : c.english.trim().toLowerCase();
+    var ruVal = t === 'situation' ? c.russian.trim() : c.russian.trim().toLowerCase();
+    S.cards.push({ id: uid(), english: enVal, russian: ruVal, label: (c.label || '').trim(), known: 0, unknown: 0, type: t });
     added++;
   });
 
