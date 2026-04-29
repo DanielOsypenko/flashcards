@@ -78,6 +78,7 @@
       line-height: 1;
     }
     .reset-btn:hover { color: var(--unknown); border-color: var(--unknown); }
+    .reset-btn.active { background: var(--primary); color: #fff; border-color: var(--primary); }
 
     main {
       flex: 1;
@@ -92,6 +93,20 @@
 
     /* ── Setup ── */
     .setup { width: 100%; }
+    .setup-back {
+      display: inline-flex;
+      align-items: center;
+      gap: 5px;
+      background: none;
+      border: none;
+      color: var(--text-muted);
+      font-size: 14px;
+      font-weight: 500;
+      cursor: pointer;
+      padding: 0;
+      margin-bottom: 20px;
+    }
+    .setup-back:hover { color: var(--text); }
     .setup h2 { font-size: 22px; margin-bottom: 8px; }
     .setup p { color: var(--text-muted); font-size: 14px; line-height: 1.6; margin-bottom: 22px; }
     .setup a { color: var(--primary); }
@@ -735,22 +750,25 @@ function renderSaving() {
 
 function render() {
   var root = document.getElementById('root');
-  if (!S.token) { root.innerHTML = renderSetup(); return; }
+  if (!S.token || S.view === 'token') { root.innerHTML = renderSetup(); return; }
   root.innerHTML = S.view === 'study' ? renderStudy() : renderManage();
 }
 
 function renderSetup() {
+  var hasSession = !!(S.token);
   return '<div class="setup">' +
-    '<h2>Welcome</h2>' +
+    (hasSession ? '<button class="setup-back" onclick="backFromToken()">← Back</button>' : '') +
+    '<h2>' + (hasSession ? 'Token settings' : 'Welcome') + '</h2>' +
     '<p>Cards sync across devices via a private GitHub Gist.<br><br>' +
     'You need a <strong>classic</strong> GitHub token (starts with <code>ghp_</code>) with <strong>gist</strong> scope.<br><br>' +
     '1. Go to <a href="https://github.com/settings/tokens" target="_blank">github.com/settings/tokens</a><br>' +
     '2. Click <strong>Generate new token (classic)</strong><br>' +
     '3. Tick <strong>gist</strong> → Generate → copy the <code>ghp_…</code> token</p>' +
     (S.err ? '<div class="error-banner">' + esc(S.err) + '</div>' : '') +
-    '<div class="form-group"><label>GitHub Token (classic, ghp_…)</label>' +
+    '<div class="form-group"><label>' + (hasSession ? 'New token (leave blank to keep current)' : 'GitHub Token (classic, ghp_…)') + '</label>' +
     '<input type="password" id="tok" placeholder="ghp_…" /></div>' +
-    '<button class="btn btn-primary btn-full" id="conn-btn" onclick="connect()">Connect</button>' +
+    '<button class="btn btn-primary btn-full" id="conn-btn" onclick="connect()">' + (hasSession ? 'Switch token' : 'Connect') + '</button>' +
+    (hasSession ? '<button class="btn btn-full" style="margin-top:10px;background:var(--bg);color:var(--unknown);border:1px solid var(--unknown)" onclick="resetToken()">Disconnect</button>' : '') +
     '</div>';
 }
 
@@ -1193,6 +1211,23 @@ function submitCard() {
   render();
 }
 
+function showTokenScreen() {
+  S._prevView = S.view !== 'token' ? S.view : (S._prevView || 'study');
+  S._prevStudyMode = S.studyMode;
+  S.view = 'token';
+  S.err = '';
+  render(); updateNav();
+}
+
+function backFromToken() {
+  S.view = S._prevView || 'study';
+  S.studyMode = S._prevStudyMode || 'vocab';
+  S._prevView = null;
+  S._prevStudyMode = null;
+  S.err = '';
+  render(); updateNav();
+}
+
 function connect() {
   var inp = document.getElementById('tok');
   if (!inp || !inp.value.trim()) return;
@@ -1203,6 +1238,10 @@ function connect() {
   initGist()
     .then(function() {
       localStorage.setItem('fc_token', S.token);
+      S.view = S._prevView || 'study';
+      S.studyMode = S._prevStudyMode || 'vocab';
+      S._prevView = null;
+      S._prevStudyMode = null;
       S.current = nextCard();
       render(); updateNav();
     })
@@ -1231,7 +1270,7 @@ function updateNav() {
       '<button class="' + (studyActive ? 'active' : '') + '" onclick="showStudyMode(\'vocab\')">Study</button>' +
       '<button class="' + (sitActive   ? 'active' : '') + '" onclick="showStudyMode(\'situation\')">Situations</button>' +
       '<button class="' + (S.view === 'manage' ? 'active' : '') + '" onclick="showView(\'manage\')">Cards</button>' +
-      '<button class="reset-btn" onclick="resetToken()" title="Reset token">⚙</button>';
+      '<button class="reset-btn' + (S.view === 'token' ? ' active' : '') + '" onclick="showTokenScreen()" title="Token settings">⚙</button>';
   } else {
     nav.innerHTML = '';
   }
