@@ -625,8 +625,9 @@ var S = {
   swStarted:   0,        // Date.now() when last started
   statsPeriod: 7,        // days shown in chart: 7 | 14 | 30
   statsMode:   '',       // filter: '' | 'vocab' | 'situation'
-  statsMetric: 'cards',  // 'cards' | 'time'
-  idleNote:    false     // true when auto-paused due to inactivity
+  statsMetric:  'cards',  // 'cards' | 'time'
+  idleNote:     false,    // true when auto-paused due to inactivity
+  idleTimeout:  parseInt(localStorage.getItem('fc_idle') || '60', 10) // seconds; 0 = off
 };
 
 var stats = JSON.parse(localStorage.getItem('fc_stats') || '[]');
@@ -817,8 +818,14 @@ function render() {
 
 function renderSetup() {
   var hasSession = !!(S.token);
+  var idlePills = '';
+  if (hasSession) {
+    [[30,'30s'],[60,'1 min'],[120,'2 min'],[300,'5 min'],[0,'Off']].forEach(function(opt) {
+      idlePills += '<button class="fpill' + (S.idleTimeout === opt[0] ? ' active' : '') + '" onclick="setIdleTimeout(' + opt[0] + ')">' + opt[1] + '</button>';
+    });
+  }
   return '<div class="setup">' +
-    '<h2>' + (hasSession ? 'Token settings' : 'Welcome') + '</h2>' +
+    '<h2>' + (hasSession ? 'Settings' : 'Welcome') + '</h2>' +
     '<p>Cards sync across devices via a private GitHub Gist.<br><br>' +
     'You need a <strong>classic</strong> GitHub token (starts with <code>ghp_</code>) with <strong>gist</strong> scope.<br><br>' +
     '1. Go to <a href="https://github.com/settings/tokens" target="_blank">github.com/settings/tokens</a><br>' +
@@ -828,7 +835,11 @@ function renderSetup() {
     '<div class="form-group"><label>' + (hasSession ? 'New token (leave blank to keep current)' : 'GitHub Token (classic, ghp_…)') + '</label>' +
     '<input type="password" id="tok" placeholder="ghp_…" /></div>' +
     '<button class="btn btn-primary btn-full" id="conn-btn" onclick="connect()">' + (hasSession ? 'Switch token' : 'Connect') + '</button>' +
-    (hasSession ? '<button class="btn btn-full" style="margin-top:10px;background:var(--bg);color:var(--unknown);border:1px solid var(--unknown)" onclick="resetToken()">Disconnect</button>' : '') +
+    (hasSession ?
+      '<div style="margin-top:22px"><div class="form-group" style="margin-bottom:8px"><label>Auto-pause timer</label></div>' +
+      '<div class="filter-pills">' + idlePills + '</div></div>' +
+      '<button class="btn btn-full" style="margin-top:22px;background:var(--bg);color:var(--unknown);border:1px solid var(--unknown)" onclick="resetToken()">Disconnect</button>'
+      : '') +
     '</div>';
 }
 
@@ -1241,12 +1252,13 @@ function renderStats() {
 
 var idleTimer    = null;
 var lastActivity = 0;
-var IDLE_MS      = 60000; // 1 minute
 
 function resetIdleTimer() {
   lastActivity = Date.now();
   if (idleTimer) { clearTimeout(idleTimer); idleTimer = null; }
-  if (S.swRunning) idleTimer = setTimeout(idlePause, IDLE_MS);
+  if (S.swRunning && S.idleTimeout > 0) {
+    idleTimer = setTimeout(idlePause, S.idleTimeout * 1000);
+  }
 }
 
 function clearIdleTimer() {
@@ -1376,6 +1388,13 @@ function setAddType(t) {
 }
 
 function dismissIdle() { S.idleNote = false; render(); }
+
+function setIdleTimeout(sec) {
+  S.idleTimeout = sec;
+  localStorage.setItem('fc_idle', String(sec));
+  if (S.swRunning) resetIdleTimer();
+  render();
+}
 
 function setStatsPeriod(p) { S.statsPeriod = p; render(); }
 function setStatsMode(m)   { S.statsMode = m;   render(); }
