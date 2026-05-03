@@ -642,18 +642,36 @@ function hdrs() {
   };
 }
 
-function saveGist() {
-  if (!S.token || !S.gistId) return Promise.resolve();
-  S.saving = true; renderSaving();
+function saveGistRequest() {
   return fetch('https://api.github.com/gists/' + S.gistId, {
     method: 'PATCH',
     headers: hdrs(),
     body: JSON.stringify({ files: { 'flashcards.json': { content: JSON.stringify({ cards: S.cards }, null, 2) } } })
   }).then(function(r) {
+    if (!r.ok) throw new Error('Sync error ' + r.status);
     S.saving = false;
-    if (!r.ok) throw new Error('Save failed ' + r.status);
     renderSaving();
-  }).catch(function(e) { S.saving = false; S.err = e.message; render(); });
+  });
+}
+
+function showSaveError(msg) {
+  S.saving = false;
+  var el = document.getElementById('saving-lbl');
+  if (el) el.textContent = msg;
+  setTimeout(function() {
+    var el2 = document.getElementById('saving-lbl');
+    if (el2) el2.textContent = '';
+  }, 5000);
+}
+
+function saveGist() {
+  if (!S.token || !S.gistId) return Promise.resolve();
+  S.saving = true; renderSaving();
+  return saveGistRequest().catch(function() {
+    return new Promise(function(res) { setTimeout(res, 3000); })
+      .then(saveGistRequest)
+      .catch(function(e) { showSaveError(e.message); });
+  });
 }
 
 var saveTimer = null;
