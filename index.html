@@ -311,6 +311,24 @@
 
     .saving { font-size: 12px; color: var(--text-muted); height: 16px; text-align: center; width: 100%; }
 
+    .idle-banner {
+      width: 100%;
+      background: #fff7ed;
+      border: 1px solid #fed7aa;
+      color: #9a3412;
+      padding: 10px 14px;
+      border-radius: 8px;
+      font-size: 13px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 8px;
+    }
+    .idle-banner button { background: none; border: none; cursor: pointer; font-size: 16px; color: inherit; line-height: 1; padding: 0 2px; }
+    @media (prefers-color-scheme: dark) {
+      .idle-banner { background: #431407; border-color: #9a3412; color: #fed7aa; }
+    }
+
     .session-pill {
       display: inline-flex;
       align-items: center;
@@ -607,7 +625,8 @@ var S = {
   swStarted:   0,        // Date.now() when last started
   statsPeriod: 7,        // days shown in chart: 7 | 14 | 30
   statsMode:   '',       // filter: '' | 'vocab' | 'situation'
-  statsMetric: 'cards'   // 'cards' | 'time'
+  statsMetric: 'cards',  // 'cards' | 'time'
+  idleNote:    false     // true when auto-paused due to inactivity
 };
 
 var stats = JSON.parse(localStorage.getItem('fc_stats') || '[]');
@@ -771,6 +790,7 @@ function markCard(known) {
   S.lastId = S.current.id;
   S.current = nextCard();
   S.flipped = false;
+  resetIdleTimer();
   scheduleSave();
   render();
 }
@@ -827,6 +847,7 @@ function renderStudy() {
   var html = '<div class="study-area">';
   html += '<div id="saving-lbl" class="saving"></div>';
   if (S.err) html += '<div class="error-banner">' + esc(S.err) + '</div>';
+  if (S.idleNote) html += '<div class="idle-banner">⏸ Timer paused — no activity for 1 min <button onclick="dismissIdle()">✕</button></div>';
 
   // Controls bar: filter pills + shuffle button
   if (total > 0) {
@@ -1216,6 +1237,35 @@ function renderStats() {
   return html;
 }
 
+// ── Idle auto-pause ───────────────────────────────────────────────────────────
+
+var idleTimer    = null;
+var lastActivity = 0;
+var IDLE_MS      = 60000; // 1 minute
+
+function resetIdleTimer() {
+  lastActivity = Date.now();
+  if (idleTimer) { clearTimeout(idleTimer); idleTimer = null; }
+  if (S.swRunning) idleTimer = setTimeout(idlePause, IDLE_MS);
+}
+
+function clearIdleTimer() {
+  if (idleTimer) { clearTimeout(idleTimer); idleTimer = null; }
+}
+
+function idlePause() {
+  if (!S.swRunning) return;
+  // Trim elapsed to last activity — don't count idle minutes in stats
+  S.swElapsed = S.swElapsed + (lastActivity - S.swStarted);
+  S.swRunning = false;
+  clearInterval(swTimer);
+  swTimer = null;
+  idleTimer = null;
+  recordSession();
+  S.idleNote = true;
+  render();
+}
+
 // ── Stopwatch ─────────────────────────────────────────────────────────────────
 
 var swTimer = null;
@@ -1247,20 +1297,25 @@ function swToggle() {
     S.swRunning = false;
     clearInterval(swTimer);
     swTimer = null;
+    clearIdleTimer();
     recordSession();
   } else {
     S.swStarted = Date.now();
     S.swRunning = true;
+    S.idleNote = false;
     swTimer = setInterval(swTick, 500);
+    resetIdleTimer();
   }
   render();
 }
 
 function swReset() {
+  clearIdleTimer();
   recordSession();
   S.swRunning = false;
   S.swElapsed = 0;
   S.swStarted = 0;
+  S.idleNote = false;
   clearInterval(swTimer);
   swTimer = null;
   render();
@@ -1276,17 +1331,19 @@ function showView(v) {
     S.swRunning = false;
     clearInterval(swTimer);
     swTimer = null;
+    clearIdleTimer();
     recordSession();
   }
   render(); updateNav();
 }
 
-function flip() { S.flipped = !S.flipped; render(); }
+function flip() { S.flipped = !S.flipped; resetIdleTimer(); render(); }
 
 function skip() {
   S.lastId = S.current ? S.current.id : null;
   S.current = nextCard();
   S.flipped = false;
+  resetIdleTimer();
   render();
 }
 
@@ -1317,6 +1374,8 @@ function setAddType(t) {
   S.addMsg = '';
   render();
 }
+
+function dismissIdle() { S.idleNote = false; render(); }
 
 function setStatsPeriod(p) { S.statsPeriod = p; render(); }
 function setStatsMode(m)   { S.statsMode = m;   render(); }
@@ -1479,7 +1538,7 @@ function connect() {
 
 function resetToken() {
   S.token = ''; S.gistId = ''; S.cards = []; S.current = null; S.err = '';
-  S.filterLabel = ''; S.manageFilter = ''; S.manageTypeFilter = ''; S.shuffleMode = false; S.shuffleQueue = []; S.direction = 'en-ru'; S.importOpen = false; S.importMsg = ''; S.addMsg = ''; S.managePage = 0; S.sessionKnown = 0; S.sessionUnknown = 0; S.sessionKnownIds = {}; S.studyMode = 'vocab'; S.addType = 'vocab'; S.statsPeriod = 7; S.statsMode = ''; S.statsMetric = 'cards';
+  S.filterLabel = ''; S.manageFilter = ''; S.manageTypeFilter = ''; S.shuffleMode = false; S.shuffleQueue = []; S.direction = 'en-ru'; S.importOpen = false; S.importMsg = ''; S.addMsg = ''; S.managePage = 0; S.sessionKnown = 0; S.sessionUnknown = 0; S.sessionKnownIds = {}; S.studyMode = 'vocab'; S.addType = 'vocab'; S.statsPeriod = 7; S.statsMode = ''; S.statsMetric = 'cards'; S.idleNote = false; clearIdleTimer();
   localStorage.removeItem('fc_token');
   localStorage.removeItem('fc_gist_id');
   render(); updateNav();
