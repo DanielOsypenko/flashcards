@@ -177,13 +177,10 @@
     }
     .filter-pills {
       display: flex;
-      flex-wrap: nowrap;
+      flex-wrap: wrap;
       gap: 6px;
-      overflow-x: auto;
       padding-bottom: 2px;
-      scrollbar-width: none;
     }
-    .filter-pills::-webkit-scrollbar { display: none; }
     .fpill {
       flex-shrink: 0;
       padding: 5px 13px;
@@ -423,8 +420,7 @@
 
     .manage-controls { display: flex; align-items: center; justify-content: space-between; }
     .section-title { font-size: 13px; font-weight: 600; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.5px; }
-    .manage-filter { display: flex; flex-wrap: nowrap; gap: 6px; overflow-x: auto; scrollbar-width: none; }
-    .manage-filter::-webkit-scrollbar { display: none; }
+    .manage-filter { display: flex; flex-wrap: wrap; gap: 6px; }
 
     .cards-list { display: flex; flex-direction: column; gap: 8px; }
     .card-item {
@@ -581,6 +577,13 @@
       .add-form { padding: 14px; }
       .form-row { flex-direction: column; gap: 0; }
       .import-body { padding: 0 12px 14px; }
+      .filter-pills, .manage-filter {
+        flex-wrap: nowrap;
+        overflow-x: auto;
+        scrollbar-width: none;
+      }
+      .filter-pills::-webkit-scrollbar, .manage-filter::-webkit-scrollbar { display: none; }
+      .fpill { flex-shrink: 0; }
     }
   </style>
 </head>
@@ -642,11 +645,20 @@ function hdrs() {
   };
 }
 
+function mergeStats(a, b) {
+  var seen = {}, out = [];
+  a.concat(b).forEach(function(r) {
+    var k = r.date + '|' + r.duration + '|' + r.known + '|' + r.unknown + '|' + r.mode;
+    if (!seen[k]) { seen[k] = true; out.push(r); }
+  });
+  return out.sort(function(a, b) { return a.date < b.date ? -1 : 1; });
+}
+
 function saveGistRequest() {
   return fetch('https://api.github.com/gists/' + S.gistId, {
     method: 'PATCH',
     headers: hdrs(),
-    body: JSON.stringify({ files: { 'flashcards.json': { content: JSON.stringify({ cards: S.cards }, null, 2) } } })
+    body: JSON.stringify({ files: { 'flashcards.json': { content: JSON.stringify({ cards: S.cards, stats: stats }, null, 2) } } })
   }).then(function(r) {
     if (!r.ok) throw new Error('Sync error ' + r.status);
     S.saving = false;
@@ -685,7 +697,14 @@ function loadGist() {
     .then(function(r) { if (!r.ok) throw new Error('Load failed ' + r.status); return r.json(); })
     .then(function(d) {
       var f = d.files['flashcards.json'];
-      if (f) S.cards = (JSON.parse(f.content).cards) || [];
+      if (f) {
+        var data = JSON.parse(f.content);
+        S.cards = data.cards || [];
+        if (Array.isArray(data.stats)) {
+          stats = mergeStats(stats, data.stats);
+          localStorage.setItem('fc_stats', JSON.stringify(stats));
+        }
+      }
     });
 }
 
@@ -693,7 +712,7 @@ function createGist() {
   return fetch('https://api.github.com/gists', {
     method: 'POST', headers: hdrs(),
     body: JSON.stringify({ description: 'Flashcards App Data', public: false,
-      files: { 'flashcards.json': { content: JSON.stringify({ cards: [] }, null, 2) } } })
+      files: { 'flashcards.json': { content: JSON.stringify({ cards: [], stats: [] }, null, 2) } } })
   }).then(function(r) { if (!r.ok) throw new Error('Create gist failed ' + r.status); return r.json(); })
     .then(function(d) { S.gistId = d.id; localStorage.setItem('fc_gist_id', d.id); });
 }
