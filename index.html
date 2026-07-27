@@ -1020,6 +1020,7 @@ function delCard(id) {
   S.shuffleQueue = S.shuffleQueue.filter(function(qid) { return qid !== id; });
   if (S.current && S.current.id === id) { S.current = nextCard(); S.flipped = false; }
   scheduleSave();
+  render();
 }
 
 function markCard(known) {
