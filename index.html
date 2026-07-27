@@ -15,6 +15,10 @@
       --known: #16a34a;
       --unknown: #dc2626;
       --shadow: 0 4px 24px rgba(0,0,0,0.10);
+      --accent-interview: #0d9488;
+      --accent-interview-light: #ccfbf1;
+      --accent-interview-border: #5eead4;
+      --accent-language: #2563eb;
     }
     @media (prefers-color-scheme: dark) {
       :root {
@@ -27,8 +31,15 @@
         --known: #22c55e;
         --unknown: #ef4444;
         --shadow: 0 4px 24px rgba(0,0,0,0.45);
+        --accent-interview: #2dd4bf;
+        --accent-interview-light: #042f2e;
+        --accent-interview-border: #0d9488;
+        --accent-language: #3b82f6;
       }
     }
+
+    /* Interview mode theme override */
+    body.mode-interview { --primary: var(--accent-interview); }
 
     * { box-sizing: border-box; margin: 0; padding: 0; }
 
@@ -639,6 +650,63 @@
       letter-spacing: 0.5px;
     }
 
+    /* ── Mode chooser ── */
+    .mode-chooser {
+      width: 100%;
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
+      padding-top: 24px;
+    }
+    .mode-chooser h2 {
+      font-size: 22px;
+      text-align: center;
+      margin-bottom: 8px;
+    }
+    .mode-chooser p {
+      text-align: center;
+      color: var(--text-muted);
+      font-size: 14px;
+      margin-bottom: 12px;
+    }
+    .mode-card {
+      width: 100%;
+      padding: 28px 24px;
+      border-radius: 18px;
+      border: 2px solid var(--border);
+      background: var(--surface);
+      cursor: pointer;
+      transition: all 0.2s;
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+    .mode-card:hover { transform: translateY(-2px); box-shadow: var(--shadow); }
+    .mode-card-icon { font-size: 32px; }
+    .mode-card h3 { font-size: 18px; font-weight: 700; }
+    .mode-card p { text-align: left; font-size: 13px; color: var(--text-muted); line-height: 1.5; margin: 0; }
+    .mode-card-lang { border-color: var(--accent-language); }
+    .mode-card-lang:hover { border-color: var(--accent-language); }
+    .mode-card-lang h3 { color: var(--accent-language); }
+    .mode-card-interview { border-color: var(--accent-interview); }
+    .mode-card-interview:hover { border-color: var(--accent-interview); }
+    .mode-card-interview h3 { color: var(--accent-interview); }
+
+    .header-back {
+      background: none;
+      border: none;
+      color: var(--text-muted);
+      cursor: pointer;
+      font-size: 15px;
+      font-weight: 500;
+      padding: 4px 8px;
+      margin-right: 6px;
+      border-radius: 8px;
+      transition: color 0.15s;
+    }
+    .header-back:hover { color: var(--text); }
+    .header-title-row { display: flex; align-items: center; }
+
     .diff-filter-row { display: flex; gap: 6px; flex-wrap: wrap; align-items: center; }
 
     .bookmark-list-btn {
@@ -698,6 +766,7 @@
 var S = {
   token:        localStorage.getItem('fc_token') || '',
   gistId:       localStorage.getItem('fc_gist_id') || '',
+  appMode:      localStorage.getItem('fc_appMode') || '',  // '' | 'language' | 'interview'
   cards:        [],
   current:      null,
   lastId:       null,
@@ -999,13 +1068,54 @@ function renderSaving() {
   if (el) el.textContent = S.saving ? 'Saving…' : '';
 }
 
+function applyModeTheme() {
+  document.body.classList.toggle('mode-interview', S.appMode === 'interview');
+  var h1 = document.querySelector('header h1');
+  if (!h1) return;
+  if (S.appMode === 'interview') {
+    h1.parentNode.querySelector('.header-title-row') ||
+      (function() {
+        var row = document.createElement('div');
+        row.className = 'header-title-row';
+        h1.parentNode.insertBefore(row, h1);
+        row.appendChild(h1);
+      })();
+  }
+}
+
 function render() {
   var root = document.getElementById('root');
   if (S.view === 'token' && !S.token) { S.view = 'study'; }
-  if (!S.token || S.view === 'token') { root.innerHTML = renderSetup(); return; }
+  if (!S.token || S.view === 'token') { root.innerHTML = renderSetup(); applyModeTheme(); return; }
+  if (!S.appMode) { root.innerHTML = renderModeChooser(); applyModeTheme(); return; }
   root.innerHTML = S.view === 'study'  ? renderStudy()  :
                    S.view === 'manage' ? renderManage() :
                    S.view === 'stats'  ? renderStats()  : renderSetup();
+  applyModeTheme();
+}
+
+function renderModeChooser() {
+  var intCount = S.cards.filter(isInterview).length;
+  var langCount = S.cards.filter(function(c) { return isVocab(c) || isSituation(c); }).length;
+  return '<div class="mode-chooser">' +
+    '<h2>What would you like to study?</h2>' +
+    '<p>Choose your learning mode</p>' +
+    '<div class="mode-card mode-card-interview" onclick="enterAppMode(\'interview\')">' +
+      '<div class="mode-card-icon">🎯</div>' +
+      '<h3>Interview Prep</h3>' +
+      '<p>Technical Q&A for job interviews — Kubernetes, Linux, networking, storage, and more.' +
+        (intCount ? ' <strong>' + intCount + ' questions</strong> ready.' : '') + '</p>' +
+    '</div>' +
+    '<div class="mode-card mode-card-lang" onclick="enterAppMode(\'language\')">' +
+      '<div class="mode-card-icon">🗣</div>' +
+      '<h3>Language Learning</h3>' +
+      '<p>Vocabulary flashcards and situation practice.' +
+        (langCount ? ' <strong>' + langCount + ' cards</strong> in your deck.' : '') + '</p>' +
+    '</div>' +
+    '<div style="text-align:center;margin-top:8px">' +
+      '<button class="reset-btn" onclick="showTokenScreen()" title="Token settings" style="font-size:14px;padding:6px 14px">⚙ Settings</button>' +
+    '</div>' +
+  '</div>';
 }
 
 function renderSetup() {
@@ -1214,12 +1324,26 @@ function renderStopwatch() {
 }
 
 function renderManage() {
+  var isIntMode = S.appMode === 'interview';
+
+  // Scope cards to current app mode
+  var modePool = isIntMode
+    ? S.cards.filter(isInterview)
+    : S.cards.filter(function(c) { return isVocab(c) || isSituation(c); });
+
+  // Within language mode, apply sub-type filter
   var mtf = S.manageTypeFilter;
-  var typePool = mtf === 'situation' ? S.cards.filter(isSituation)
-               : mtf === 'vocab'     ? S.cards.filter(isVocab)
-               : mtf === 'interview' ? S.cards.filter(isInterview)
-               : S.cards;
-  var labels = uniqueLabels(mtf || null);
+  var typePool;
+  if (isIntMode) {
+    typePool = modePool; // no sub-type filter in interview mode
+  } else {
+    typePool = mtf === 'situation' ? modePool.filter(isSituation)
+             : mtf === 'vocab'     ? modePool.filter(isVocab)
+             : modePool;
+  }
+
+  var labelFilter = isIntMode ? 'interview' : (mtf || null);
+  var labels = uniqueLabels(labelFilter);
   var displayCards = S.manageFilter
     ? typePool.filter(function(c) { return c.label === S.manageFilter; })
     : typePool;
@@ -1236,13 +1360,18 @@ function renderManage() {
   html += '<div id="saving-lbl" class="saving"></div>';
   if (S.err) html += '<div class="error-banner">' + esc(S.err) + '</div>';
 
-  html += '<div class="add-form"><h3>Add card</h3>' +
-    '<div style="display:flex;gap:6px;margin-bottom:14px;flex-wrap:wrap">' +
+  // Add card form — type tabs scoped to mode
+  html += '<div class="add-form"><h3>' + (isIntMode ? 'Add question' : 'Add card') + '</h3>';
+
+  if (!isIntMode) {
+    // Language mode: Vocab/Situation tabs
+    html += '<div style="display:flex;gap:6px;margin-bottom:14px">' +
       '<button class="fpill' + (S.addType === 'vocab' ? ' active' : '') + '" onclick="setAddType(\'vocab\')">Vocab</button>' +
       '<button class="fpill' + (isSit ? ' active' : '') + '" onclick="setAddType(\'situation\')">Situation</button>' +
-      '<button class="fpill' + (isIntAdd ? ' active' : '') + '" onclick="setAddType(\'interview\')">Interview</button>' +
-    '</div>' +
-    '<div class="form-row">' +
+    '</div>';
+  }
+
+  html += '<div class="form-row">' +
       '<div class="form-group"><label>' + fldA + '</label><input id="inp-en" type="text" placeholder="' + phA + '" /></div>' +
     '</div>' +
     '<div class="form-row">' +
@@ -1262,7 +1391,7 @@ function renderManage() {
       '</div></div>';
   }
 
-  html += '<div class="form-group"><label>Label <span style="font-weight:400;text-transform:none">(optional' + (isIntAdd ? ' — topic e.g. Kubernetes' : '') + ')</span></label>' +
+  html += '<div class="form-group"><label>' + (isIntAdd ? 'Topic' : 'Label') + ' <span style="font-weight:400;text-transform:none">(optional)</span></label>' +
     '<input id="inp-lbl" type="text" list="label-suggestions" placeholder="' + (isIntAdd ? 'e.g. Kubernetes' : 'e.g. emotions') + '" />' +
     '<datalist id="label-suggestions">' + uniqueLabels(S.addType).map(function(l) { return '<option value="' + esc(l) + '">'; }).join('') + '</datalist>' +
     '</div>' +
@@ -1271,6 +1400,13 @@ function renderManage() {
     '</div>';
 
   // Import panel
+  var importPlaceholder = isIntMode
+    ? '[{"question": "What is a Pod?", "answer": "A Pod is...", "label": "Kubernetes", "type": "interview"}]'
+    : '[{"english": "to procrastinate", "russian": "откладывать", "label": "verb"}]';
+  var importHelp = isIntMode
+    ? '<code>[{"question":"...","answer":"...","label":"Topic","type":"interview","difficulty":"medium"}, ...]</code>'
+    : '<code>[{"english":"word","russian":"слово","label":"noun"}, ...]</code>';
+
   html += '<div class="import-panel">' +
     '<div class="import-header" onclick="toggleImport()">' +
       '<span>Import JSON</span>' +
@@ -1278,29 +1414,34 @@ function renderManage() {
     '</div>';
   if (S.importOpen) {
     html += '<div class="import-body">' +
-      '<p>Vocab/Situation: <code>[{"english":"word","russian":"слово","label":"noun"}, ...]</code><br>' +
-      'Interview: <code>[{"question":"...","answer":"...","label":"Kubernetes","type":"interview","difficulty":"medium"}, ...]</code><br>' +
-      'The <code>label</code> and <code>difficulty</code> fields are optional. Duplicates are skipped.</p>' +
+      '<p>Format: ' + importHelp + '<br>Duplicates are skipped.</p>' +
       '<label class="import-file-btn">📂 Choose JSON file<input type="file" accept=".json" style="display:none" onchange="handleFileImport(this)"></label>' +
       '<div class="import-or">— or paste JSON below —</div>' +
-      '<textarea class="import-textarea" id="import-txt" placeholder=\'[{"question": "What is a Pod?", "answer": "A Pod is...", "label": "Kubernetes", "type": "interview"}]\'></textarea>' +
+      '<textarea class="import-textarea" id="import-txt" placeholder=\'' + importPlaceholder + '\'></textarea>' +
       '<button class="btn btn-primary btn-full" style="margin-top:10px" onclick="importFromTextarea()">Import</button>' +
       (S.importMsg ? '<div class="' + (S.importMsg[0] === '✓' ? 'import-msg-ok' : 'import-msg-err') + '">' + esc(S.importMsg) + '</div>' : '') +
     '</div>';
   }
   html += '</div>';
 
-  // Type + label filters
+  // Type + label filters — scoped to mode
   html += '<div class="manage-controls" style="flex-direction:column;align-items:stretch;gap:8px">';
-  html += '<div class="filter-pills">' +
-    '<button class="fpill' + (!mtf ? ' active' : '') + '" onclick="setManageTypeFilter(\'\')">All (' + S.cards.length + ')</button>' +
-    '<button class="fpill' + (mtf === 'vocab' ? ' active' : '') + '" onclick="setManageTypeFilter(\'vocab\')">Vocab (' + S.cards.filter(isVocab).length + ')</button>' +
-    '<button class="fpill' + (mtf === 'situation' ? ' active' : '') + '" onclick="setManageTypeFilter(\'situation\')">Situations (' + S.cards.filter(isSituation).length + ')</button>' +
-    '<button class="fpill' + (mtf === 'interview' ? ' active' : '') + '" onclick="setManageTypeFilter(\'interview\')">Interview (' + S.cards.filter(isInterview).length + ')</button>' +
-  '</div>';
+
+  if (isIntMode) {
+    // Interview mode: just show total count, no type tabs
+    html += '<div class="section-title">' + modePool.length + ' question' + (modePool.length !== 1 ? 's' : '') + '</div>';
+  } else {
+    // Language mode: Vocab/Situation tabs
+    html += '<div class="filter-pills">' +
+      '<button class="fpill' + (!mtf ? ' active' : '') + '" onclick="setManageTypeFilter(\'\')">All (' + modePool.length + ')</button>' +
+      '<button class="fpill' + (mtf === 'vocab' ? ' active' : '') + '" onclick="setManageTypeFilter(\'vocab\')">Vocab (' + modePool.filter(isVocab).length + ')</button>' +
+      '<button class="fpill' + (mtf === 'situation' ? ' active' : '') + '" onclick="setManageTypeFilter(\'situation\')">Situations (' + modePool.filter(isSituation).length + ')</button>' +
+    '</div>';
+  }
+
   if (labels.length > 0) {
     html += '<div class="manage-filter">' +
-      '<button class="fpill' + (!S.manageFilter ? ' active' : '') + '" onclick="setManageFilter(\'\')">All labels</button>';
+      '<button class="fpill' + (!S.manageFilter ? ' active' : '') + '" onclick="setManageFilter(\'\')">All ' + (isIntMode ? 'topics' : 'labels') + '</button>';
     labels.forEach(function(lbl) {
       html += '<button class="fpill' + (S.manageFilter === lbl ? ' active' : '') + '" onclick="setManageFilter(\'' + esc(lbl) + '\')">' + esc(lbl) + '</button>';
     });
@@ -1470,13 +1611,21 @@ function buildChartSVG(days, metric) {
 }
 
 function renderStats() {
+  var isIntMode = S.appMode === 'interview';
   var period = S.statsPeriod;
   var mode   = S.statsMode;
   var metric = S.statsMetric;
-  var days   = aggregateStats(period, mode);
+
+  // In interview mode, force stats to interview; in language mode, filter only language modes
+  var effectiveMode = isIntMode ? (mode || 'interview') : mode;
+  var days = aggregateStats(period, effectiveMode);
 
   var totalSessions = 0, totalMs = 0, totalKnown = 0, totalUnknown = 0;
-  var filtered = mode ? stats.filter(function(r) { return r.mode === mode; }) : stats;
+  var filtered = stats.filter(function(r) {
+    if (isIntMode) return !effectiveMode || r.mode === effectiveMode;
+    if (effectiveMode) return r.mode === effectiveMode;
+    return r.mode !== 'interview'; // language mode: exclude interview stats
+  });
   var cutoff = days[0].date;
   filtered.forEach(function(r) {
     if (r.date < cutoff) return;
@@ -1490,15 +1639,21 @@ function renderStats() {
   var html = '<div class="stats-area">';
   html += '<div id="saving-lbl" class="saving"></div>';
 
-  // Period + mode filters
+  // Period filters
   html += '<div class="filter-pills">';
   [7, 14, 30, 60].forEach(function(p) {
     html += '<button class="fpill' + (period === p ? ' active' : '') + '" onclick="setStatsPeriod(' + p + ')">' + p + 'd</button>';
   });
-  html += '<button class="fpill' + (!mode ? ' active' : '') + '" onclick="setStatsMode(\'\')">All</button>';
-  html += '<button class="fpill' + (mode === 'vocab' ? ' active' : '') + '" onclick="setStatsMode(\'vocab\')">Vocab</button>';
-  html += '<button class="fpill' + (mode === 'situation' ? ' active' : '') + '" onclick="setStatsMode(\'situation\')">Situations</button>';
-  html += '<button class="fpill' + (mode === 'interview' ? ' active' : '') + '" onclick="setStatsMode(\'interview\')">Interview</button>';
+
+  // Mode sub-filters scoped to app mode
+  if (isIntMode) {
+    // Interview mode: no sub-filters needed (always interview)
+  } else {
+    // Language mode: All / Vocab / Situations
+    html += '<button class="fpill' + (!mode ? ' active' : '') + '" onclick="setStatsMode(\'\')">All</button>';
+    html += '<button class="fpill' + (mode === 'vocab' ? ' active' : '') + '" onclick="setStatsMode(\'vocab\')">Vocab</button>';
+    html += '<button class="fpill' + (mode === 'situation' ? ' active' : '') + '" onclick="setStatsMode(\'situation\')">Situations</button>';
+  }
   html += '</div>';
 
   // Metric toggle
@@ -1711,6 +1866,41 @@ function togglePractice() {
   render();
 }
 
+function enterAppMode(mode) {
+  S.appMode = mode;
+  localStorage.setItem('fc_appMode', mode);
+  if (mode === 'interview') {
+    S.studyMode = 'interview';
+    S.addType = 'interview';
+    S.manageTypeFilter = 'interview';
+  } else {
+    S.studyMode = 'vocab';
+    S.addType = 'vocab';
+    S.manageTypeFilter = '';
+  }
+  S.filterLabel = '';
+  S.shuffleQueue = [];
+  S.lastId = null;
+  S.flipped = false;
+  S.sessionKnown = 0;
+  S.sessionUnknown = 0;
+  S.sessionKnownIds = {};
+  S.difficultyFilter = '';
+  S.bookmarkFilter = false;
+  S.practiceMode = false;
+  S.view = 'study';
+  S.current = nextCard();
+  render(); updateNav();
+}
+
+function exitAppMode() {
+  S.appMode = '';
+  localStorage.removeItem('fc_appMode');
+  S.view = 'study';
+  S.studyMode = 'vocab';
+  render(); updateNav();
+}
+
 function showStudyMode(mode) {
   S.studyMode = mode;
   S.filterLabel = '';
@@ -1866,8 +2056,12 @@ function connect() {
   initGist()
     .then(function() {
       localStorage.setItem('fc_token', S.token);
-      S.view = S._prevView || 'study';
-      S.studyMode = S._prevStudyMode || 'vocab';
+      if (S.appMode) {
+        S.view = S._prevView || 'study';
+        S.studyMode = S._prevStudyMode || (S.appMode === 'interview' ? 'interview' : 'vocab');
+      } else {
+        S.view = 'study'; // will show mode chooser since appMode is empty
+      }
       S._prevView = null;
       S._prevStudyMode = null;
       S.current = nextCard();
@@ -1881,35 +2075,53 @@ function connect() {
 }
 
 function resetToken() {
-  S.token = ''; S.gistId = ''; S.cards = []; S.current = null; S.err = '';
+  S.token = ''; S.gistId = ''; S.cards = []; S.current = null; S.err = ''; S.appMode = '';
   S.filterLabel = ''; S.manageFilter = ''; S.manageTypeFilter = ''; S.shuffleMode = false; S.shuffleQueue = []; S.direction = 'en-ru'; S.importOpen = false; S.importMsg = ''; S.addMsg = ''; S.managePage = 0; S.sessionKnown = 0; S.sessionUnknown = 0; S.sessionKnownIds = {}; S.studyMode = 'vocab'; S.addType = 'vocab'; S.statsPeriod = 7; S.statsMode = ''; S.statsMetric = 'cards'; S.idleNote = false; S.difficultyFilter = ''; S.bookmarkFilter = false; S.practiceMode = false; clearIdleTimer();
   localStorage.removeItem('fc_token');
   localStorage.removeItem('fc_gist_id');
+  localStorage.removeItem('fc_appMode');
   render(); updateNav();
 }
 
 function updateNav() {
   var nav = document.getElementById('main-nav');
+  var h1  = document.querySelector('header h1');
   if (!nav) return;
-  if (S.token) {
-    if (S.view === 'token') {
-      nav.innerHTML =
-        '<button onclick="backFromToken()">← Back</button>' +
-        '<button class="reset-btn active" title="Token settings">⚙</button>';
-    } else {
-      var studyActive = S.view === 'study' && S.studyMode === 'vocab';
-      var sitActive   = S.view === 'study' && S.studyMode === 'situation';
-      var intActive   = S.view === 'study' && S.studyMode === 'interview';
-      nav.innerHTML =
-        '<button class="' + (studyActive ? 'active' : '') + '" onclick="showStudyMode(\'vocab\')">Study</button>' +
-        '<button class="' + (sitActive   ? 'active' : '') + '" onclick="showStudyMode(\'situation\')">Situations</button>' +
-        '<button class="' + (intActive   ? 'active' : '') + '" onclick="showStudyMode(\'interview\')">Interview</button>' +
-        '<button class="' + (S.view === 'manage' ? 'active' : '') + '" onclick="showView(\'manage\')">Cards</button>' +
-        '<button class="' + (S.view === 'stats'  ? 'active' : '') + '" onclick="showView(\'stats\')">Stats</button>' +
-        '<button class="reset-btn" onclick="showTokenScreen()" title="Token settings">⚙</button>';
-    }
-  } else {
+
+  if (!S.token || !S.appMode) {
     nav.innerHTML = '';
+    if (h1) h1.textContent = 'Flashcards';
+    return;
+  }
+
+  if (S.view === 'token') {
+    nav.innerHTML =
+      '<button onclick="backFromToken()">← Back</button>' +
+      '<button class="reset-btn active" title="Token settings">⚙</button>';
+    return;
+  }
+
+  if (h1) h1.textContent = S.appMode === 'interview' ? 'Interview Prep' : 'Flashcards';
+
+  if (S.appMode === 'interview') {
+    // Interview mode nav: ← Study Cards Stats ⚙
+    nav.innerHTML =
+      '<button class="header-back" onclick="exitAppMode()" title="Back to mode selection">←</button>' +
+      '<button class="' + (S.view === 'study'  ? 'active' : '') + '" onclick="showView(\'study\')">Study</button>' +
+      '<button class="' + (S.view === 'manage' ? 'active' : '') + '" onclick="showView(\'manage\')">Questions</button>' +
+      '<button class="' + (S.view === 'stats'  ? 'active' : '') + '" onclick="showView(\'stats\')">Stats</button>' +
+      '<button class="reset-btn" onclick="showTokenScreen()" title="Token settings">⚙</button>';
+  } else {
+    // Language mode nav: ← Study Situations Cards Stats ⚙
+    var studyActive = S.view === 'study' && S.studyMode === 'vocab';
+    var sitActive   = S.view === 'study' && S.studyMode === 'situation';
+    nav.innerHTML =
+      '<button class="header-back" onclick="exitAppMode()" title="Back to mode selection">←</button>' +
+      '<button class="' + (studyActive ? 'active' : '') + '" onclick="showStudyMode(\'vocab\')">Study</button>' +
+      '<button class="' + (sitActive   ? 'active' : '') + '" onclick="showStudyMode(\'situation\')">Situations</button>' +
+      '<button class="' + (S.view === 'manage' ? 'active' : '') + '" onclick="showView(\'manage\')">Cards</button>' +
+      '<button class="' + (S.view === 'stats'  ? 'active' : '') + '" onclick="showView(\'stats\')">Stats</button>' +
+      '<button class="reset-btn" onclick="showTokenScreen()" title="Token settings">⚙</button>';
   }
 }
 
