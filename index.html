@@ -707,6 +707,22 @@
     .header-back:hover { color: var(--text); }
     .header-title-row { display: flex; align-items: center; }
 
+    .card-resource {
+      margin-top: 14px;
+      width: 100%;
+      text-align: left;
+    }
+    .card-resource a {
+      font-size: 12px;
+      color: var(--primary);
+      text-decoration: none;
+      word-break: break-all;
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+    }
+    .card-resource a:hover { text-decoration: underline; }
+
     .diff-filter-row { display: flex; gap: 6px; flex-wrap: wrap; align-items: center; }
 
     .bookmark-list-btn {
@@ -978,7 +994,7 @@ function uniqueLabels(typeFilter) {
   return labels.sort();
 }
 
-function addCard(en, ru, label, type, difficulty) {
+function addCard(en, ru, label, type, difficulty, resource) {
   var t = (type === 'situation' || type === 'interview') ? type : 'vocab';
   var preserveCase = (t === 'situation' || t === 'interview');
   var enNorm = preserveCase ? en.trim() : en.trim().toLowerCase();
@@ -991,6 +1007,7 @@ function addCard(en, ru, label, type, difficulty) {
   if (t === 'interview') {
     c.difficulty = difficulty || 'medium';
     c.bookmarked = false;
+    if (resource) c.resource = resource.trim();
   }
   S.cards.push(c);
   if (!S.current && S.studyMode === t) S.current = c;
@@ -1286,6 +1303,7 @@ function renderStudy() {
         '<div class="card-face card-back">' +
           '<div class="card-lang">' + backLang + '</div>' +
           '<div class="' + wordClassBack + '">' + esc(backWord) + '</div>' +
+          (isInt && c.resource ? '<div class="card-resource"><a href="' + esc(c.resource) + '" target="_blank" rel="noopener" onclick="event.stopPropagation()">📖 Learn more</a></div>' : '') +
         '</div>' +
       '</div></div>';
 
@@ -1395,6 +1413,8 @@ function renderManage() {
     '<input id="inp-lbl" type="text" list="label-suggestions" placeholder="' + (isIntAdd ? 'e.g. Kubernetes' : 'e.g. emotions') + '" />' +
     '<datalist id="label-suggestions">' + uniqueLabels(S.addType).map(function(l) { return '<option value="' + esc(l) + '">'; }).join('') + '</datalist>' +
     '</div>' +
+    (isIntAdd ? '<div class="form-group"><label>Resource link <span style="font-weight:400;text-transform:none">(optional)</span></label>' +
+      '<input id="inp-resource" type="url" placeholder="https://kubernetes.io/docs/..." /></div>' : '') +
     '<button class="btn btn-primary btn-full" onclick="submitCard()">Add</button>' +
     (S.addMsg ? '<div class="' + (S.addMsg[0] === '✓' ? 'import-msg-ok' : 'import-msg-err') + '" style="margin-top:10px">' + esc(S.addMsg) + '</div>' : '') +
     '</div>';
@@ -1986,6 +2006,7 @@ function doImport(raw) {
     if (importType === 'interview') {
       card.difficulty = c.difficulty || 'medium';
       card.bookmarked = !!c.bookmarked;
+      if (c.resource) card.resource = c.resource.trim();
     }
     S.cards.push(card);
     added++;
@@ -2017,14 +2038,17 @@ function submitCard() {
   var en = document.getElementById('inp-en');
   var ru = document.getElementById('inp-ru');
   var lbl = document.getElementById('inp-lbl');
+  var res = document.getElementById('inp-resource');
   if (!en || !ru) return;
   if (!en.value.trim() || !ru.value.trim()) { S.addMsg = '✗ Fill both fields'; render(); return; }
   var diff = S.addType === 'interview' ? (S._addDifficulty || 'medium') : undefined;
-  var ok = addCard(en.value, ru.value, lbl ? lbl.value : '', S.addType, diff);
+  var resVal = (res && res.value.trim()) ? res.value.trim() : undefined;
+  var ok = addCard(en.value, ru.value, lbl ? lbl.value : '', S.addType, diff, resVal);
   if (!ok) { S.addMsg = '✗ "' + en.value.trim() + '" already exists'; render(); return; }
   S.addMsg = '';
   en.value = ''; ru.value = '';
   if (lbl) lbl.value = '';
+  if (res) res.value = '';
   en.focus();
   render();
 }
