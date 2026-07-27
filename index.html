@@ -86,9 +86,14 @@
       background: none;
       border: 1px solid var(--border);
       cursor: pointer;
-      padding: 4px 9px;
+      padding: 8px 12px;
       border-radius: 20px;
       line-height: 1;
+      min-width: 40px;
+      min-height: 40px;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
     }
     .reset-btn:hover { color: var(--unknown); border-color: var(--unknown); }
     .reset-btn.active { background: var(--primary); color: #fff; border-color: var(--primary); }
@@ -194,7 +199,7 @@
     }
     .fpill {
       flex-shrink: 0;
-      padding: 5px 13px;
+      padding: 8px 14px;
       border-radius: 20px;
       border: 1px solid var(--border);
       background: var(--surface);
@@ -204,6 +209,7 @@
       cursor: pointer;
       transition: all 0.15s;
       white-space: nowrap;
+      min-height: 36px;
     }
     .fpill.active { background: var(--primary); color: #fff; border-color: var(--primary); }
     .shuffle-btn {
@@ -288,6 +294,7 @@
       text-align: center;
       line-height: 1.25;
       letter-spacing: -0.5px;
+      word-break: break-word;
     }
     .card-hint { margin-top: 14px; font-size: 12px; color: var(--text-muted); }
     .card-tag {
@@ -305,14 +312,17 @@
     .action-row .btn { flex: 1; padding: 15px; font-size: 16px; }
 
     .skip-btn {
-      font-size: 13px;
+      font-size: 14px;
       color: var(--text-muted);
       background: none;
-      border: none;
+      border: 1px solid var(--border);
+      border-radius: 20px;
       cursor: pointer;
-      padding: 4px 8px;
+      padding: 10px 24px;
+      min-height: 44px;
+      transition: all 0.15s;
     }
-    .skip-btn:hover { color: var(--text); }
+    .skip-btn:hover { color: var(--text); border-color: var(--text-muted); }
 
     .empty-state { text-align: center; padding: 56px 0; color: var(--text-muted); }
     .empty-state h3 { font-size: 18px; color: var(--text); margin-bottom: 8px; }
@@ -469,12 +479,17 @@
       cursor: pointer;
       font-size: 20px;
       line-height: 1;
-      padding: 2px 4px;
-      border-radius: 4px;
-      transition: color 0.15s;
+      padding: 8px 10px;
+      min-width: 40px;
+      min-height: 40px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      border-radius: 8px;
+      transition: color 0.15s, background 0.15s;
       flex-shrink: 0;
     }
-    .del-btn:hover { color: var(--unknown); }
+    .del-btn:hover { color: var(--unknown); background: rgba(220,38,38,0.08); }
 
     /* Progress bar for shuffle mode */
     .progress-wrap {
@@ -546,15 +561,20 @@
       padding: 4px 0;
     }
     .page-btn {
-      padding: 5px 14px;
+      padding: 8px 18px;
       border-radius: 20px;
       border: 1px solid var(--border);
       background: var(--surface);
       color: var(--text-muted);
-      font-size: 13px;
+      font-size: 14px;
       font-weight: 500;
       cursor: pointer;
       transition: all 0.15s;
+      min-height: 40px;
+      min-width: 40px;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
     }
     .page-btn:hover:not(:disabled) { border-color: var(--primary); color: var(--primary); }
     .page-btn:disabled { opacity: 0.35; cursor: not-allowed; }
@@ -697,11 +717,16 @@
       border: none;
       color: var(--text-muted);
       cursor: pointer;
-      font-size: 15px;
+      font-size: 18px;
       font-weight: 500;
-      padding: 4px 8px;
-      margin-right: 6px;
+      padding: 8px 10px;
+      margin-right: 2px;
       border-radius: 8px;
+      min-width: 40px;
+      min-height: 40px;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
       transition: color 0.15s;
     }
     .header-back:hover { color: var(--text); }
@@ -723,6 +748,67 @@
     }
     .card-resource a:hover { text-decoration: underline; }
 
+    /* ── Swipe gesture feedback ── */
+    .card-container.swiping .card {
+      transition: none;
+    }
+    .swipe-hint {
+      position: absolute;
+      top: 50%;
+      transform: translateY(-50%);
+      font-size: 14px;
+      font-weight: 700;
+      padding: 6px 14px;
+      border-radius: 8px;
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity 0.15s;
+      z-index: 5;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+    .swipe-hint-right { right: 12px; background: var(--known); color: #fff; }
+    .swipe-hint-left { left: 12px; background: var(--unknown); color: #fff; }
+    .swipe-hint-up { top: 12px; left: 50%; transform: translateX(-50%); background: #f59e0b; color: #fff; }
+    .swipe-hint.visible { opacity: 1; }
+
+    /* ── Session progress bar ── */
+    .session-progress {
+      width: 100%;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    .session-progress-bar {
+      flex: 1;
+      height: 3px;
+      background: var(--border);
+      border-radius: 2px;
+      overflow: hidden;
+    }
+    .session-progress-fill {
+      height: 100%;
+      background: var(--primary);
+      border-radius: 2px;
+      transition: width 0.3s;
+    }
+    .session-progress-text {
+      font-size: 11px;
+      color: var(--text-muted);
+      white-space: nowrap;
+      flex-shrink: 0;
+    }
+
+    /* ── Pull to refresh ── */
+    .ptr-indicator {
+      width: 100%;
+      text-align: center;
+      font-size: 12px;
+      color: var(--text-muted);
+      padding: 8px 0;
+      transition: opacity 0.2s;
+    }
+
     .diff-filter-row { display: flex; gap: 6px; flex-wrap: wrap; align-items: center; }
 
     .bookmark-list-btn {
@@ -740,7 +826,7 @@
 
     /* ── Mobile adjustments (≤ 480px) ── */
     @media (max-width: 480px) {
-      header { padding: 10px 14px; }
+      header { padding: 8px 10px; }
       header h1 { font-size: 15px; }
       nav {
         overflow-x: auto;
@@ -748,15 +834,17 @@
         scrollbar-width: none;
       }
       nav::-webkit-scrollbar { display: none; }
-      nav button { padding: 5px 9px; font-size: 13px; flex-shrink: 0; }
-      main { padding: 16px 12px 32px; }
-      .card-word { font-size: 24px; }
+      nav button { padding: 8px 10px; font-size: 13px; flex-shrink: 0; min-height: 36px; }
+      main { padding: 14px 10px 28px; }
+      .card-face { padding: 24px 20px; }
+      .card-word { font-size: 22px; }
       .card-word-question { font-size: 17px; }
       .card-word-long { font-size: 14px; max-height: 250px; }
-      .action-row .btn { padding: 13px; font-size: 15px; }
-      .action-row-3 .btn { padding: 11px 6px; font-size: 13px; }
+      .interview-card .card-face { min-height: 240px; }
+      .action-row .btn { padding: 14px; font-size: 15px; min-height: 48px; }
+      .action-row-3 .btn { padding: 12px 8px; font-size: 14px; min-height: 48px; }
       .add-form { padding: 14px; }
-      .form-row { flex-direction: column; gap: 0; }
+      .form-row { flex-direction: column; gap: 8px; }
       .import-body { padding: 0 12px 14px; }
       .filter-pills, .manage-filter, .diff-filter-row {
         flex-wrap: nowrap;
@@ -765,6 +853,9 @@
       }
       .filter-pills::-webkit-scrollbar, .manage-filter::-webkit-scrollbar, .diff-filter-row::-webkit-scrollbar { display: none; }
       .fpill { flex-shrink: 0; }
+      .summary-row { flex-wrap: wrap; }
+      .summary-card { min-width: calc(33% - 6px); }
+      .skip-btn { width: 100%; text-align: center; }
     }
   </style>
 </head>
@@ -1234,10 +1325,19 @@ function renderStudy() {
       '</div>';
   }
 
+  // Session progress bar
   var allInScope = S.filterLabel
     ? modeCards.filter(function(c) { return c.label === S.filterLabel; })
     : modeCards;
   var sessionDone = !pool.length && allInScope.length > 0;
+  var sessionTotal = S.sessionKnown + S.sessionUnknown;
+  if (sessionTotal > 0 && allInScope.length > 0) {
+    var progressPct = Math.round((sessionTotal / allInScope.length) * 100);
+    html += '<div class="session-progress">' +
+      '<div class="session-progress-bar"><div class="session-progress-fill" style="width:' + Math.min(progressPct, 100) + '%"></div></div>' +
+      '<span class="session-progress-text">' + sessionTotal + '/' + allInScope.length + '</span>' +
+    '</div>';
+  }
 
   var emptyMsg = isInt
     ? '<h3>No interview questions yet</h3><p>Go to Cards tab, pick <strong>Interview</strong> type and add questions, or import a question bank.</p>'
@@ -1290,6 +1390,17 @@ function renderStudy() {
     }
 
     html += '<div class="card-container">';
+    // Swipe hint overlays (shown during swipe gesture)
+    if (S.flipped) {
+      if (isInt && !S.practiceMode) {
+        html += '<div class="swipe-hint swipe-hint-right">Nailed it</div>';
+        html += '<div class="swipe-hint swipe-hint-left">Failed</div>';
+        html += '<div class="swipe-hint swipe-hint-up">Partially</div>';
+      } else if (!isInt) {
+        html += '<div class="swipe-hint swipe-hint-right">Know it</div>';
+        html += '<div class="swipe-hint swipe-hint-left">Don\'t know</div>';
+      }
+    }
     // Bookmark button for interview cards
     if (isInt) {
       html += '<button class="bookmark-icon' + (c.bookmarked ? ' active' : '') + '" onclick="event.stopPropagation();toggleBookmark(\'' + c.id + '\')" title="Bookmark">' + (c.bookmarked ? '★' : '☆') + '</button>';
@@ -2150,10 +2261,170 @@ function updateNav() {
   }
 }
 
+// ── Swipe gestures ────────────────────────────────────────────────────────────
+
+var swipeState = { startX: 0, startY: 0, swiping: false };
+var SWIPE_THRESHOLD = 60;
+
+function initSwipe() {
+  var root = document.getElementById('root');
+  if (!root) return;
+  root.addEventListener('touchstart', onTouchStart, { passive: true });
+  root.addEventListener('touchmove', onTouchMove, { passive: false });
+  root.addEventListener('touchend', onTouchEnd, { passive: true });
+}
+
+function onTouchStart(e) {
+  if (!S.flipped || S.view !== 'study') return;
+  var card = document.getElementById('fc');
+  if (!card) return;
+  var t = e.touches[0];
+  swipeState.startX = t.clientX;
+  swipeState.startY = t.clientY;
+  swipeState.swiping = true;
+  var container = card.closest('.card-container');
+  if (container) container.classList.add('swiping');
+}
+
+function onTouchMove(e) {
+  if (!swipeState.swiping) return;
+  var card = document.getElementById('fc');
+  if (!card) return;
+  var t = e.touches[0];
+  var dx = t.clientX - swipeState.startX;
+  var dy = t.clientY - swipeState.startY;
+  // Slight card tilt during swipe
+  card.style.transform = 'rotateY(180deg) translate(' + (dx * 0.3) + 'px,' + (dy * 0.3) + 'px)';
+  // Show swipe hints
+  var container = card.closest('.card-container');
+  if (!container) return;
+  var hints = container.querySelectorAll('.swipe-hint');
+  hints.forEach(function(h) { h.classList.remove('visible'); });
+  if (dx > SWIPE_THRESHOLD / 2) {
+    var rh = container.querySelector('.swipe-hint-right');
+    if (rh) rh.classList.add('visible');
+  } else if (dx < -SWIPE_THRESHOLD / 2) {
+    var lh = container.querySelector('.swipe-hint-left');
+    if (lh) lh.classList.add('visible');
+  } else if (dy < -SWIPE_THRESHOLD / 2) {
+    var uh = container.querySelector('.swipe-hint-up');
+    if (uh) uh.classList.add('visible');
+  }
+  if (Math.abs(dx) > 10 || Math.abs(dy) > 10) e.preventDefault();
+}
+
+function onTouchEnd(e) {
+  if (!swipeState.swiping) return;
+  swipeState.swiping = false;
+  var card = document.getElementById('fc');
+  if (card) card.style.transform = '';
+  var container = card ? card.closest('.card-container') : null;
+  if (container) container.classList.remove('swiping');
+
+  var t = e.changedTouches[0];
+  var dx = t.clientX - swipeState.startX;
+  var dy = t.clientY - swipeState.startY;
+  var isInt = S.studyMode === 'interview';
+
+  if (Math.abs(dx) > SWIPE_THRESHOLD && Math.abs(dx) > Math.abs(dy)) {
+    if (dx > 0) {
+      // Swipe right = Know it / Nailed it
+      if (isInt && !S.practiceMode) markInterview('nailed');
+      else if (!isInt) markCard(true);
+      else practiceNext();
+    } else {
+      // Swipe left = Don't know / Failed
+      if (isInt && !S.practiceMode) markInterview('failed');
+      else if (!isInt) markCard(false);
+      else practiceNext();
+    }
+  } else if (dy < -SWIPE_THRESHOLD && Math.abs(dy) > Math.abs(dx)) {
+    // Swipe up = Partially (interview only)
+    if (isInt && !S.practiceMode) markInterview('partial');
+    else skip();
+  } else if (dy > SWIPE_THRESHOLD && Math.abs(dy) > Math.abs(dx)) {
+    // Swipe down = Skip
+    skip();
+  }
+}
+
+// ── Keyboard shortcuts ───────────────────────────────────────────────────────
+
+document.addEventListener('keydown', function(e) {
+  if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA') return;
+  if (S.view !== 'study' || !S.current) return;
+
+  var isInt = S.studyMode === 'interview';
+  if (e.code === 'Space' || e.code === 'Enter') {
+    e.preventDefault();
+    if (!S.flipped) flip();
+    else if (isInt && S.practiceMode) practiceNext();
+  } else if (e.code === 'ArrowRight') {
+    e.preventDefault();
+    if (S.flipped) {
+      if (isInt && !S.practiceMode) markInterview('nailed');
+      else if (!isInt) markCard(true);
+      else practiceNext();
+    } else skip();
+  } else if (e.code === 'ArrowLeft') {
+    e.preventDefault();
+    if (S.flipped) {
+      if (isInt && !S.practiceMode) markInterview('failed');
+      else if (!isInt) markCard(false);
+      else practiceNext();
+    }
+  } else if (e.code === 'ArrowUp' && S.flipped) {
+    e.preventDefault();
+    if (isInt && !S.practiceMode) markInterview('partial');
+  } else if (e.code === 'ArrowDown') {
+    e.preventDefault();
+    skip();
+  } else if (e.key === '1' && S.flipped && isInt && !S.practiceMode) {
+    markInterview('failed');
+  } else if (e.key === '2' && S.flipped && isInt && !S.practiceMode) {
+    markInterview('partial');
+  } else if (e.key === '3' && S.flipped && isInt && !S.practiceMode) {
+    markInterview('nailed');
+  }
+});
+
+// ── Pull to refresh ──────────────────────────────────────────────────────────
+
+var ptrState = { startY: 0, pulling: false };
+
+function initPullToRefresh() {
+  var root = document.getElementById('root');
+  if (!root) return;
+  root.addEventListener('touchstart', function(e) {
+    if (window.scrollY === 0 && S.view === 'study' && S.token && S.gistId) {
+      ptrState.startY = e.touches[0].clientY;
+      ptrState.pulling = true;
+    }
+  }, { passive: true });
+  root.addEventListener('touchend', function(e) {
+    if (!ptrState.pulling) return;
+    ptrState.pulling = false;
+    var dy = e.changedTouches[0].clientY - ptrState.startY;
+    if (dy > 100 && window.scrollY === 0) {
+      var el = document.getElementById('saving-lbl');
+      if (el) el.textContent = 'Refreshing…';
+      loadGist().then(function() {
+        S.current = nextCard();
+        render();
+      }).catch(function(err) {
+        S.err = err.message;
+        render();
+      });
+    }
+  }, { passive: true });
+}
+
 // ── Init ──────────────────────────────────────────────────────────────────────
 
 (function() {
   updateNav();
+  initSwipe();
+  initPullToRefresh();
   if (S.token && S.gistId) {
     loadGist()
       .then(function() { S.current = nextCard(); render(); })
