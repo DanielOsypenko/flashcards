@@ -1,0 +1,12 @@
+{
+  "mcpServers": {
+    "serena": {
+      "command": "uvx",
+      "args": ["--from", "serena-agent", "serena", "start-mcp-server", "--project", "/Users/danielosypenko/Work/flashcards"]
+    },
+    "playwright": {
+      "command": "npx",
+      "args": ["-y", "@playwright/mcp@latest"]
+    }
+  }
+}

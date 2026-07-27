@@ -566,23 +566,120 @@
     .summary-card .s-lbl { font-size: 10px; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.4px; display: block; margin-top: 3px; }
     .metric-tabs { display: flex; gap: 6px; }
 
+    /* ── Interview mode ── */
+    .int-badge { background: #eff6ff; color: #1d4ed8; border-color: #93c5fd; }
+    @media (prefers-color-scheme: dark) { .int-badge { background: #1e3a5f; color: #60a5fa; border-color: #1d4ed8; } }
+
+    .diff-easy   { background: #f0fdf4; color: #15803d; border-color: #86efac; }
+    .diff-medium { background: #fefce8; color: #a16207; border-color: #fde047; }
+    .diff-hard   { background: #fef2f2; color: #b91c1c; border-color: #fca5a5; }
+    @media (prefers-color-scheme: dark) {
+      .diff-easy   { background: #14532d; color: #86efac; border-color: #15803d; }
+      .diff-medium { background: #422006; color: #fde047; border-color: #a16207; }
+      .diff-hard   { background: #450a0a; color: #fca5a5; border-color: #b91c1c; }
+    }
+
+    .card-word-question {
+      font-size: 20px;
+      font-weight: 600;
+      text-align: left;
+      line-height: 1.4;
+      width: 100%;
+    }
+    .card-word-long {
+      font-size: 15px;
+      font-weight: 400;
+      text-align: left;
+      line-height: 1.6;
+      letter-spacing: 0;
+      max-height: 300px;
+      overflow-y: auto;
+      width: 100%;
+      white-space: pre-line;
+    }
+    .interview-card .card-face {
+      min-height: 280px;
+      padding: 28px 24px;
+      justify-content: flex-start;
+    }
+
+    .bookmark-icon {
+      position: absolute;
+      top: 12px;
+      right: 14px;
+      font-size: 18px;
+      cursor: pointer;
+      color: var(--text-muted);
+      background: none;
+      border: none;
+      padding: 2px;
+      line-height: 1;
+      z-index: 2;
+      transition: color 0.15s;
+    }
+    .bookmark-icon:hover { color: var(--primary); }
+    .bookmark-icon.active { color: #f59e0b; }
+
+    .card-container { position: relative; }
+
+    .card-badges { display: flex; gap: 6px; margin-top: 14px; flex-wrap: wrap; }
+
+    .btn-partial { background: #f59e0b; color: #fff; }
+
+    .action-row-3 { width: 100%; display: flex; gap: 8px; }
+    .action-row-3 .btn { flex: 1; padding: 13px 8px; font-size: 14px; }
+
+    .practice-indicator {
+      width: 100%;
+      text-align: center;
+      font-size: 12px;
+      color: #f59e0b;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+
+    .diff-filter-row { display: flex; gap: 6px; flex-wrap: wrap; align-items: center; }
+
+    .bookmark-list-btn {
+      background: none;
+      border: none;
+      cursor: pointer;
+      font-size: 16px;
+      color: var(--text-muted);
+      padding: 2px 4px;
+      line-height: 1;
+      transition: color 0.15s;
+    }
+    .bookmark-list-btn:hover { color: #f59e0b; }
+    .bookmark-list-btn.active { color: #f59e0b; }
+
     /* ── Mobile adjustments (≤ 480px) ── */
     @media (max-width: 480px) {
       header { padding: 10px 14px; }
       header h1 { font-size: 15px; }
-      nav button { padding: 5px 9px; font-size: 13px; }
+      nav {
+        overflow-x: auto;
+        flex-wrap: nowrap;
+        scrollbar-width: none;
+      }
+      nav::-webkit-scrollbar { display: none; }
+      nav button { padding: 5px 9px; font-size: 13px; flex-shrink: 0; }
       main { padding: 16px 12px 32px; }
       .card-word { font-size: 24px; }
+      .card-word-question { font-size: 17px; }
+      .card-word-long { font-size: 14px; max-height: 250px; }
       .action-row .btn { padding: 13px; font-size: 15px; }
+      .action-row-3 .btn { padding: 11px 6px; font-size: 13px; }
       .add-form { padding: 14px; }
       .form-row { flex-direction: column; gap: 0; }
       .import-body { padding: 0 12px 14px; }
-      .filter-pills, .manage-filter {
+      .filter-pills, .manage-filter, .diff-filter-row {
         flex-wrap: nowrap;
         overflow-x: auto;
         scrollbar-width: none;
       }
-      .filter-pills::-webkit-scrollbar, .manage-filter::-webkit-scrollbar { display: none; }
+      .filter-pills::-webkit-scrollbar, .manage-filter::-webkit-scrollbar, .diff-filter-row::-webkit-scrollbar { display: none; }
       .fpill { flex-shrink: 0; }
     }
   </style>
@@ -630,7 +727,10 @@ var S = {
   statsMode:   '',       // filter: '' | 'vocab' | 'situation'
   statsMetric:  'cards',  // 'cards' | 'time'
   idleNote:     false,    // true when auto-paused due to inactivity
-  idleTimeout:  parseInt(localStorage.getItem('fc_idle') || '60', 10) // seconds; 0 = off
+  idleTimeout:  parseInt(localStorage.getItem('fc_idle') || '60', 10), // seconds; 0 = off
+  difficultyFilter: '',  // '' | 'easy' | 'medium' | 'hard'
+  bookmarkFilter: false, // show only bookmarked cards
+  practiceMode: false    // no-scoring study mode
 };
 
 var stats = JSON.parse(localStorage.getItem('fc_stats') || '[]');
@@ -730,13 +830,20 @@ function initGist() {
 // ── Card logic ────────────────────────────────────────────────────────────────
 
 function isSituation(c) { return c.type === 'situation'; }
-function isVocab(c)     { return c.type !== 'situation'; }
+function isVocab(c)     { return !c.type || c.type === 'vocab'; }
+function isInterview(c)  { return c.type === 'interview'; }
 
 function filteredPool() {
-  var typeOk = S.studyMode === 'situation' ? isSituation : isVocab;
-  var pool = S.filterLabel
-    ? S.cards.filter(function(c) { return typeOk(c) && c.label === S.filterLabel; })
-    : S.cards.filter(typeOk);
+  var typeOk = S.studyMode === 'situation' ? isSituation
+             : S.studyMode === 'interview' ? isInterview
+             : isVocab;
+  var pool = S.cards.filter(function(c) {
+    if (!typeOk(c)) return false;
+    if (S.filterLabel && c.label !== S.filterLabel) return false;
+    if (S.studyMode === 'interview' && S.difficultyFilter && (c.difficulty || 'medium') !== S.difficultyFilter) return false;
+    if (S.studyMode === 'interview' && S.bookmarkFilter && !c.bookmarked) return false;
+    return true;
+  });
   return pool.filter(function(c) { return !S.sessionKnownIds[c.id]; });
 }
 
@@ -792,22 +899,30 @@ function uid() { return Date.now().toString(36) + Math.random().toString(36).sli
 
 function uniqueLabels(typeFilter) {
   var seen = {}, labels = [];
-  var typeOk = typeFilter === 'situation' ? isSituation : (typeFilter === 'vocab' ? isVocab : function() { return true; });
+  var typeOk = typeFilter === 'situation' ? isSituation
+             : typeFilter === 'interview' ? isInterview
+             : typeFilter === 'vocab' ? isVocab
+             : function() { return true; };
   S.cards.filter(typeOk).forEach(function(c) {
     if (c.label && !seen[c.label]) { seen[c.label] = true; labels.push(c.label); }
   });
   return labels.sort();
 }
 
-function addCard(en, ru, label, type) {
-  var t = type === 'situation' ? 'situation' : 'vocab';
-  var enNorm = t === 'situation' ? en.trim() : en.trim().toLowerCase();
-  var ruNorm = t === 'situation' ? ru.trim() : ru.trim().toLowerCase();
+function addCard(en, ru, label, type, difficulty) {
+  var t = (type === 'situation' || type === 'interview') ? type : 'vocab';
+  var preserveCase = (t === 'situation' || t === 'interview');
+  var enNorm = preserveCase ? en.trim() : en.trim().toLowerCase();
+  var ruNorm = preserveCase ? ru.trim() : ru.trim().toLowerCase();
   var dup = S.cards.some(function(x) {
     return x.type === t && x.english.toLowerCase() === enNorm.toLowerCase();
   });
   if (dup) return false;
   var c = { id: uid(), english: enNorm, russian: ruNorm, label: (label || '').trim(), known: 0, unknown: 0, type: t };
+  if (t === 'interview') {
+    c.difficulty = difficulty || 'medium';
+    c.bookmarked = false;
+  }
   S.cards.push(c);
   if (!S.current && S.studyMode === t) S.current = c;
   scheduleSave();
@@ -830,6 +945,46 @@ function markCard(known) {
   S.flipped = false;
   resetIdleTimer();
   scheduleSave();
+  render();
+}
+
+// 3-level confidence for interview mode
+function markInterview(level) {
+  if (!S.current) return;
+  if (level === 'nailed') {
+    S.current.known = (S.current.known || 0) + 2;
+    S.sessionKnown++;
+    S.sessionKnownIds[S.current.id] = true;
+  } else if (level === 'partial') {
+    S.current.known = (S.current.known || 0) + 1;
+    S.current.unknown = (S.current.unknown || 0) + 1;
+    S.sessionKnown++;
+  } else {
+    S.current.unknown = (S.current.unknown || 0) + 2;
+    S.sessionUnknown++;
+  }
+  S.lastId = S.current.id;
+  S.current = nextCard();
+  S.flipped = false;
+  resetIdleTimer();
+  scheduleSave();
+  render();
+}
+
+function toggleBookmark(id) {
+  var card = S.cards.find(function(c) { return c.id === id; });
+  if (card) {
+    card.bookmarked = !card.bookmarked;
+    scheduleSave();
+    render();
+  }
+}
+
+function practiceNext() {
+  S.lastId = S.current ? S.current.id : null;
+  S.current = nextCard();
+  S.flipped = false;
+  resetIdleTimer();
   render();
 }
 
@@ -883,7 +1038,8 @@ function renderSetup() {
 function renderStudy() {
   var pool = filteredPool();
   var isSit = S.studyMode === 'situation';
-  var typeOk = isSit ? isSituation : isVocab;
+  var isInt = S.studyMode === 'interview';
+  var typeOk = isInt ? isInterview : (isSit ? isSituation : isVocab);
   var modeCards = S.cards.filter(typeOk);
   var total = modeCards.length;
   var labels = uniqueLabels(S.studyMode);
@@ -896,6 +1052,7 @@ function renderStudy() {
   html += '<div id="saving-lbl" class="saving"></div>';
   if (S.err) html += '<div class="error-banner">' + esc(S.err) + '</div>';
   if (S.idleNote) html += '<div class="idle-banner">⏸ Timer paused — no activity for 1 min <button onclick="dismissIdle()">✕</button></div>';
+  if (isInt && S.practiceMode) html += '<div class="practice-indicator">Practice mode — no scoring</div>';
 
   // Controls bar: filter pills + shuffle button
   if (total > 0) {
@@ -906,9 +1063,25 @@ function renderStudy() {
       html += '<button class="fpill' + (S.filterLabel === lbl ? ' active' : '') + '" onclick="setFilter(\'' + esc(lbl) + '\')">' + esc(lbl) + ' (' + cnt + ')</button>';
     });
     html += '</div>';
+
+    // Difficulty + bookmark filters for interview mode
+    if (isInt) {
+      html += '<div class="diff-filter-row">';
+      ['', 'easy', 'medium', 'hard'].forEach(function(d) {
+        var lbl = d ? d.charAt(0).toUpperCase() + d.slice(1) : 'All levels';
+        html += '<button class="fpill' + (S.difficultyFilter === d ? ' active' : '') + '" onclick="setDifficultyFilter(\'' + d + '\')">' + lbl + '</button>';
+      });
+      var bmCount = modeCards.filter(function(c) { return c.bookmarked; }).length;
+      html += '<button class="fpill' + (S.bookmarkFilter ? ' active' : '') + '" onclick="toggleBookmarkFilter()">★ ' + bmCount + '</button>';
+      html += '</div>';
+    }
+
     html += '<div class="controls-actions">';
     html += '<button class="shuffle-btn' + (S.shuffleMode ? ' active' : '') + '" onclick="toggleShuffle()">⇄ Shuffle</button>';
-    if (!isSit) {
+    if (isInt) {
+      html += '<button class="shuffle-btn' + (S.practiceMode ? ' active' : '') + '" onclick="togglePractice()">Practice</button>';
+    }
+    if (!isSit && !isInt) {
       html += '<button class="shuffle-btn' + (S.direction === 'ru-en' ? ' active' : '') + '" onclick="toggleDirection()" title="Flip card direction">' + (S.direction === 'en-ru' ? 'EN→RU' : 'RU→EN') + '</button>';
     }
     html += '</div></div>';
@@ -921,8 +1094,8 @@ function renderStudy() {
     html += '<div class="progress-wrap"><div class="progress-bar-wrap"><div class="progress-bar-fill" style="width:' + pct + '%"></div></div><span class="progress-count">' + done + ' / ' + poolSize + '</span></div>';
   }
 
-  // Stats
-  if (pool.length > 0) {
+  // Session stats (hidden in practice mode)
+  if (pool.length > 0 && !(isInt && S.practiceMode)) {
     html += '<div class="stats-bar">' +
       '<span class="session-pill">' +
         '<span class="s-k">✓' + S.sessionKnown + '</span>' +
@@ -938,7 +1111,9 @@ function renderStudy() {
     : modeCards;
   var sessionDone = !pool.length && allInScope.length > 0;
 
-  var emptyMsg = isSit
+  var emptyMsg = isInt
+    ? '<h3>No interview questions yet</h3><p>Go to Cards tab, pick <strong>Interview</strong> type and add questions, or import a question bank.</p>'
+    : isSit
     ? '<h3>No situations yet</h3><p>Go to Cards tab, pick <strong>Situation</strong> type and add some.</p>'
     : '<h3>No cards yet</h3><p>Go to Cards tab to add words.</p>';
 
@@ -952,29 +1127,75 @@ function renderStudy() {
     }
   } else {
     var c = S.current;
-    var frontLang = isSit ? 'Situation' : (S.direction === 'en-ru' ? 'English' : 'Russian');
-    var backLang  = isSit ? 'Feeling'   : (S.direction === 'en-ru' ? 'Russian'  : 'English');
-    var frontWord = isSit ? c.english   : (S.direction === 'en-ru' ? c.english  : c.russian);
-    var backWord  = isSit ? c.russian   : (S.direction === 'en-ru' ? c.russian  : c.english);
-    html += '<div class="card-container">' +
-      '<div class="card' + (S.flipped ? ' flipped' : '') + '" onclick="flip()" id="fc">' +
+    var frontLang, backLang, frontWord, backWord, wordClassFront, wordClassBack;
+    if (isInt) {
+      frontLang = 'Question';
+      backLang  = 'Answer';
+      frontWord = c.english;
+      backWord  = c.russian;
+      wordClassFront = 'card-word card-word-question';
+      wordClassBack  = 'card-word card-word-long';
+    } else if (isSit) {
+      frontLang = 'Situation'; backLang = 'Feeling';
+      frontWord = c.english;   backWord = c.russian;
+      wordClassFront = 'card-word'; wordClassBack = 'card-word';
+    } else {
+      frontLang = S.direction === 'en-ru' ? 'English' : 'Russian';
+      backLang  = S.direction === 'en-ru' ? 'Russian'  : 'English';
+      frontWord = S.direction === 'en-ru' ? c.english  : c.russian;
+      backWord  = S.direction === 'en-ru' ? c.russian  : c.english;
+      wordClassFront = 'card-word'; wordClassBack = 'card-word';
+    }
+
+    var cardClass = 'card' + (S.flipped ? ' flipped' : '') + (isInt ? ' interview-card' : '');
+
+    // Card badges (label + difficulty)
+    var badgesHtml = '';
+    if (isInt) {
+      var diff = c.difficulty || 'medium';
+      badgesHtml = '<div class="card-badges">';
+      if (c.label) badgesHtml += '<span class="label-badge int-badge">' + esc(c.label) + '</span>';
+      badgesHtml += '<span class="label-badge diff-' + diff + '">' + diff + '</span>';
+      badgesHtml += '</div>';
+    } else if (c.label) {
+      badgesHtml = '<div class="card-tag">' + esc(c.label) + '</div>';
+    }
+
+    html += '<div class="card-container">';
+    // Bookmark button for interview cards
+    if (isInt) {
+      html += '<button class="bookmark-icon' + (c.bookmarked ? ' active' : '') + '" onclick="event.stopPropagation();toggleBookmark(\'' + c.id + '\')" title="Bookmark">' + (c.bookmarked ? '★' : '☆') + '</button>';
+    }
+    html += '<div class="' + cardClass + '" onclick="flip()" id="fc">' +
         '<div class="card-face">' +
           '<div class="card-lang">' + frontLang + '</div>' +
-          '<div class="card-word">' + esc(frontWord) + '</div>' +
-          (c.label ? '<div class="card-tag">' + esc(c.label) + '</div>' : '') +
+          '<div class="' + wordClassFront + '">' + esc(frontWord) + '</div>' +
+          badgesHtml +
           '<div class="card-hint">tap to reveal</div>' +
         '</div>' +
         '<div class="card-face card-back">' +
           '<div class="card-lang">' + backLang + '</div>' +
-          '<div class="card-word">' + esc(backWord) + '</div>' +
+          '<div class="' + wordClassBack + '">' + esc(backWord) + '</div>' +
         '</div>' +
       '</div></div>';
 
     if (S.flipped) {
-      html += '<div class="action-row">' +
-        '<button class="btn btn-unknown" onclick="markCard(false)">✗ Don\'t know</button>' +
-        '<button class="btn btn-known" onclick="markCard(true)">✓ Know it</button>' +
-        '</div>';
+      if (isInt && S.practiceMode) {
+        // Practice mode: just Next, no scoring
+        html += '<button class="btn btn-primary btn-full" onclick="practiceNext()">Next →</button>';
+      } else if (isInt) {
+        // Interview: 3-level confidence
+        html += '<div class="action-row-3">' +
+          '<button class="btn btn-unknown" onclick="markInterview(\'failed\')">✗ Failed</button>' +
+          '<button class="btn btn-partial" onclick="markInterview(\'partial\')">~ Partially</button>' +
+          '<button class="btn btn-known" onclick="markInterview(\'nailed\')">✓ Nailed it</button>' +
+          '</div>';
+      } else {
+        html += '<div class="action-row">' +
+          '<button class="btn btn-unknown" onclick="markCard(false)">✗ Don\'t know</button>' +
+          '<button class="btn btn-known" onclick="markCard(true)">✓ Know it</button>' +
+          '</div>';
+      }
     } else {
       html += '<button class="skip-btn" onclick="skip()">Skip →</button>';
     }
@@ -996,6 +1217,7 @@ function renderManage() {
   var mtf = S.manageTypeFilter;
   var typePool = mtf === 'situation' ? S.cards.filter(isSituation)
                : mtf === 'vocab'     ? S.cards.filter(isVocab)
+               : mtf === 'interview' ? S.cards.filter(isInterview)
                : S.cards;
   var labels = uniqueLabels(mtf || null);
   var displayCards = S.manageFilter
@@ -1004,26 +1226,44 @@ function renderManage() {
   var sorted = displayCards.slice().sort(function(a,b){ return (b.unknown||0)-(a.unknown||0); });
 
   var isSit = S.addType === 'situation';
-  var fldA = isSit ? 'Situation' : 'English';
-  var fldB = isSit ? 'Feeling / Response' : 'Russian';
-  var phA  = isSit ? 'the shop is closed' : 'to procrastinate';
-  var phB  = isSit ? 'frustrating' : 'откладывать';
+  var isIntAdd = S.addType === 'interview';
+  var fldA = isIntAdd ? 'Question' : (isSit ? 'Situation' : 'English');
+  var fldB = isIntAdd ? 'Answer'   : (isSit ? 'Feeling / Response' : 'Russian');
+  var phA  = isIntAdd ? 'What is a Kubernetes Pod?' : (isSit ? 'the shop is closed' : 'to procrastinate');
+  var phB  = isIntAdd ? 'A Pod is the smallest deployable unit in Kubernetes...' : (isSit ? 'frustrating' : 'откладывать');
 
   var html = '<div class="manage-area">';
   html += '<div id="saving-lbl" class="saving"></div>';
   if (S.err) html += '<div class="error-banner">' + esc(S.err) + '</div>';
 
   html += '<div class="add-form"><h3>Add card</h3>' +
-    '<div style="display:flex;gap:6px;margin-bottom:14px">' +
-      '<button class="fpill' + (!isSit ? ' active' : '') + '" onclick="setAddType(\'vocab\')">Vocab</button>' +
+    '<div style="display:flex;gap:6px;margin-bottom:14px;flex-wrap:wrap">' +
+      '<button class="fpill' + (S.addType === 'vocab' ? ' active' : '') + '" onclick="setAddType(\'vocab\')">Vocab</button>' +
       '<button class="fpill' + (isSit ? ' active' : '') + '" onclick="setAddType(\'situation\')">Situation</button>' +
+      '<button class="fpill' + (isIntAdd ? ' active' : '') + '" onclick="setAddType(\'interview\')">Interview</button>' +
     '</div>' +
     '<div class="form-row">' +
       '<div class="form-group"><label>' + fldA + '</label><input id="inp-en" type="text" placeholder="' + phA + '" /></div>' +
-      '<div class="form-group"><label>' + fldB + '</label><input id="inp-ru" type="text" placeholder="' + phB + '" /></div>' +
     '</div>' +
-    '<div class="form-group"><label>Label <span style="font-weight:400;text-transform:none">(optional)</span></label>' +
-    '<input id="inp-lbl" type="text" list="label-suggestions" placeholder="e.g. emotions" />' +
+    '<div class="form-row">' +
+      '<div class="form-group"><label>' + fldB + '</label>' +
+        (isIntAdd ? '<textarea id="inp-ru" class="import-textarea" style="min-height:80px" placeholder="' + esc(phB) + '"></textarea>'
+                  : '<input id="inp-ru" type="text" placeholder="' + phB + '" />') +
+      '</div>' +
+    '</div>';
+
+  // Difficulty selector for interview cards
+  if (isIntAdd) {
+    html += '<div class="form-group"><label>Difficulty</label>' +
+      '<div style="display:flex;gap:6px">' +
+        '<button class="fpill' + (S._addDifficulty === 'easy' ? ' active' : '') + '" onclick="S._addDifficulty=\'easy\';render()">Easy</button>' +
+        '<button class="fpill' + ((!S._addDifficulty || S._addDifficulty === 'medium') ? ' active' : '') + '" onclick="S._addDifficulty=\'medium\';render()">Medium</button>' +
+        '<button class="fpill' + (S._addDifficulty === 'hard' ? ' active' : '') + '" onclick="S._addDifficulty=\'hard\';render()">Hard</button>' +
+      '</div></div>';
+  }
+
+  html += '<div class="form-group"><label>Label <span style="font-weight:400;text-transform:none">(optional' + (isIntAdd ? ' — topic e.g. Kubernetes' : '') + ')</span></label>' +
+    '<input id="inp-lbl" type="text" list="label-suggestions" placeholder="' + (isIntAdd ? 'e.g. Kubernetes' : 'e.g. emotions') + '" />' +
     '<datalist id="label-suggestions">' + uniqueLabels(S.addType).map(function(l) { return '<option value="' + esc(l) + '">'; }).join('') + '</datalist>' +
     '</div>' +
     '<button class="btn btn-primary btn-full" onclick="submitCard()">Add</button>' +
@@ -1038,11 +1278,12 @@ function renderManage() {
     '</div>';
   if (S.importOpen) {
     html += '<div class="import-body">' +
-      '<p>Expected format: <code>[{"english":"word","russian":"слово","label":"noun"}, ...]</code><br>' +
-      'The <code>label</code> field is optional. Existing cards with the same English text are skipped.</p>' +
+      '<p>Vocab/Situation: <code>[{"english":"word","russian":"слово","label":"noun"}, ...]</code><br>' +
+      'Interview: <code>[{"question":"...","answer":"...","label":"Kubernetes","type":"interview","difficulty":"medium"}, ...]</code><br>' +
+      'The <code>label</code> and <code>difficulty</code> fields are optional. Duplicates are skipped.</p>' +
       '<label class="import-file-btn">📂 Choose JSON file<input type="file" accept=".json" style="display:none" onchange="handleFileImport(this)"></label>' +
       '<div class="import-or">— or paste JSON below —</div>' +
-      '<textarea class="import-textarea" id="import-txt" placeholder=\'[{"english": "to procrastinate", "russian": "откладывать", "label": "verb"}]\'></textarea>' +
+      '<textarea class="import-textarea" id="import-txt" placeholder=\'[{"question": "What is a Pod?", "answer": "A Pod is...", "label": "Kubernetes", "type": "interview"}]\'></textarea>' +
       '<button class="btn btn-primary btn-full" style="margin-top:10px" onclick="importFromTextarea()">Import</button>' +
       (S.importMsg ? '<div class="' + (S.importMsg[0] === '✓' ? 'import-msg-ok' : 'import-msg-err') + '">' + esc(S.importMsg) + '</div>' : '') +
     '</div>';
@@ -1055,6 +1296,7 @@ function renderManage() {
     '<button class="fpill' + (!mtf ? ' active' : '') + '" onclick="setManageTypeFilter(\'\')">All (' + S.cards.length + ')</button>' +
     '<button class="fpill' + (mtf === 'vocab' ? ' active' : '') + '" onclick="setManageTypeFilter(\'vocab\')">Vocab (' + S.cards.filter(isVocab).length + ')</button>' +
     '<button class="fpill' + (mtf === 'situation' ? ' active' : '') + '" onclick="setManageTypeFilter(\'situation\')">Situations (' + S.cards.filter(isSituation).length + ')</button>' +
+    '<button class="fpill' + (mtf === 'interview' ? ' active' : '') + '" onclick="setManageTypeFilter(\'interview\')">Interview (' + S.cards.filter(isInterview).length + ')</button>' +
   '</div>';
   if (labels.length > 0) {
     html += '<div class="manage-filter">' +
@@ -1076,15 +1318,20 @@ function renderManage() {
     html += '<div class="empty-state" style="padding:32px 0"><p>' + (S.manageFilter ? 'No cards with this label.' : 'No cards yet.') + '</p></div>';
   } else {
     pageCards.forEach(function(c) {
+      var isIntCard = c.type === 'interview';
+      var diff = c.difficulty || 'medium';
       html += '<div class="card-item">' +
         '<div class="card-item-text">' +
           '<div class="card-item-en">' + esc(c.english) + '</div>' +
           '<div class="card-item-ru">' + esc(c.russian) + '</div>' +
           '<div class="card-item-meta">' +
             (c.type === 'situation' ? '<span class="label-badge sit-badge">situation</span>' : '') +
+            (isIntCard ? '<span class="label-badge int-badge">interview</span>' : '') +
+            (isIntCard ? '<span class="label-badge diff-' + diff + '">' + diff + '</span>' : '') +
             (c.label ? '<span class="label-badge">' + esc(c.label) + '</span>' : '') +
           '</div>' +
         '</div>' +
+        (isIntCard ? '<button class="bookmark-list-btn' + (c.bookmarked ? ' active' : '') + '" onclick="toggleBookmark(\'' + c.id + '\')">' + (c.bookmarked ? '★' : '☆') + '</button>' : '') +
         '<div class="card-item-score"><span class="s-k">✓' + (c.known||0) + '</span> <span class="s-u">✗' + (c.unknown||0) + '</span></div>' +
         '<button class="del-btn" onclick="delCard(\'' + c.id + '\')">×</button>' +
         '</div>';
@@ -1212,7 +1459,7 @@ function buildChartSVG(days, metric) {
   }
 
   // X-axis labels
-  var step = n > 14 ? 2 : 1;
+  var step = n > 30 ? 5 : (n > 14 ? 2 : 1);
   days.forEach(function(d, i) {
     if (i % step !== 0 && i !== n - 1) return;
     svg += '<text x="' + xOf(i) + '" y="' + (mt + ch + 18) + '" text-anchor="middle" font-size="9" fill="var(--text-muted)">' + fmtDateLabel(d.date, n) + '</text>';
@@ -1245,12 +1492,13 @@ function renderStats() {
 
   // Period + mode filters
   html += '<div class="filter-pills">';
-  [7, 14, 30].forEach(function(p) {
+  [7, 14, 30, 60].forEach(function(p) {
     html += '<button class="fpill' + (period === p ? ' active' : '') + '" onclick="setStatsPeriod(' + p + ')">' + p + 'd</button>';
   });
   html += '<button class="fpill' + (!mode ? ' active' : '') + '" onclick="setStatsMode(\'\')">All</button>';
   html += '<button class="fpill' + (mode === 'vocab' ? ' active' : '') + '" onclick="setStatsMode(\'vocab\')">Vocab</button>';
   html += '<button class="fpill' + (mode === 'situation' ? ' active' : '') + '" onclick="setStatsMode(\'situation\')">Situations</button>';
+  html += '<button class="fpill' + (mode === 'interview' ? ' active' : '') + '" onclick="setStatsMode(\'interview\')">Interview</button>';
   html += '</div>';
 
   // Metric toggle
@@ -1274,11 +1522,14 @@ function renderStats() {
   html += '</div>';
 
   // Summary cards
+  var totalAnswers = totalKnown + totalUnknown;
+  var pctCorrect = totalAnswers > 0 ? Math.round((totalKnown / totalAnswers) * 100) : 0;
   html += '<div class="summary-row">';
   html += '<div class="summary-card"><span class="s-val">' + totalSessions + '</span><span class="s-lbl">Sessions</span></div>';
   html += '<div class="summary-card"><span class="s-val">' + totalMins + '</span><span class="s-lbl">Minutes</span></div>';
   html += '<div class="summary-card"><span class="s-val s-k">' + totalKnown + '</span><span class="s-lbl">Known</span></div>';
   html += '<div class="summary-card"><span class="s-val s-u">' + totalUnknown + '</span><span class="s-lbl">Unknown</span></div>';
+  html += '<div class="summary-card"><span class="s-val" style="color:var(--primary)">' + pctCorrect + '%</span><span class="s-lbl">Correct</span></div>';
   html += '</div>';
 
   html += '</div>';
@@ -1437,6 +1688,29 @@ function setStatsPeriod(p) { S.statsPeriod = p; render(); }
 function setStatsMode(m)   { S.statsMode = m;   render(); }
 function setStatsMetric(m) { S.statsMetric = m; render(); }
 
+function setDifficultyFilter(d) {
+  S.difficultyFilter = d;
+  S.shuffleQueue = [];
+  S.lastId = null;
+  S.flipped = false;
+  S.current = nextCard();
+  render();
+}
+
+function toggleBookmarkFilter() {
+  S.bookmarkFilter = !S.bookmarkFilter;
+  S.shuffleQueue = [];
+  S.lastId = null;
+  S.flipped = false;
+  S.current = nextCard();
+  render();
+}
+
+function togglePractice() {
+  S.practiceMode = !S.practiceMode;
+  render();
+}
+
 function showStudyMode(mode) {
   S.studyMode = mode;
   S.filterLabel = '';
@@ -1446,6 +1720,9 @@ function showStudyMode(mode) {
   S.sessionKnown = 0;
   S.sessionUnknown = 0;
   S.sessionKnownIds = {};
+  S.difficultyFilter = '';
+  S.bookmarkFilter = false;
+  S.practiceMode = false;
   S.current = nextCard();
   showView('study');
 }
@@ -1501,16 +1778,26 @@ function doImport(raw) {
 
   var added = 0, skipped = 0;
   items.forEach(function(c) {
-    if (!c.english || !c.russian) { skipped++; return; }
-    var importType = c.type === 'situation' ? 'situation' : 'vocab';
+    // Accept question/answer as aliases for english/russian
+    var en = c.english || c.question;
+    var ru = c.russian || c.answer;
+    if (!en || !ru) { skipped++; return; }
+    var importType = c.type === 'situation' ? 'situation'
+                   : c.type === 'interview' ? 'interview'
+                   : 'vocab';
+    var preserveCase = (importType === 'situation' || importType === 'interview');
+    var enNorm = preserveCase ? en.trim() : en.trim().toLowerCase();
     var dup = S.cards.some(function(x) {
-      return x.type === importType && x.english.toLowerCase() === c.english.trim().toLowerCase();
+      return x.type === importType && x.english.toLowerCase() === enNorm.toLowerCase();
     });
     if (dup) { skipped++; return; }
-    var t = c.type === 'situation' ? 'situation' : 'vocab';
-    var enVal = t === 'situation' ? c.english.trim() : c.english.trim().toLowerCase();
-    var ruVal = t === 'situation' ? c.russian.trim() : c.russian.trim().toLowerCase();
-    S.cards.push({ id: uid(), english: enVal, russian: ruVal, label: (c.label || '').trim(), known: 0, unknown: 0, type: t });
+    var ruVal = preserveCase ? ru.trim() : ru.trim().toLowerCase();
+    var card = { id: uid(), english: enNorm, russian: ruVal, label: (c.label || '').trim(), known: 0, unknown: 0, type: importType };
+    if (importType === 'interview') {
+      card.difficulty = c.difficulty || 'medium';
+      card.bookmarked = !!c.bookmarked;
+    }
+    S.cards.push(card);
     added++;
   });
 
@@ -1542,7 +1829,8 @@ function submitCard() {
   var lbl = document.getElementById('inp-lbl');
   if (!en || !ru) return;
   if (!en.value.trim() || !ru.value.trim()) { S.addMsg = '✗ Fill both fields'; render(); return; }
-  var ok = addCard(en.value, ru.value, lbl ? lbl.value : '', S.addType);
+  var diff = S.addType === 'interview' ? (S._addDifficulty || 'medium') : undefined;
+  var ok = addCard(en.value, ru.value, lbl ? lbl.value : '', S.addType, diff);
   if (!ok) { S.addMsg = '✗ "' + en.value.trim() + '" already exists'; render(); return; }
   S.addMsg = '';
   en.value = ''; ru.value = '';
@@ -1594,7 +1882,7 @@ function connect() {
 
 function resetToken() {
   S.token = ''; S.gistId = ''; S.cards = []; S.current = null; S.err = '';
-  S.filterLabel = ''; S.manageFilter = ''; S.manageTypeFilter = ''; S.shuffleMode = false; S.shuffleQueue = []; S.direction = 'en-ru'; S.importOpen = false; S.importMsg = ''; S.addMsg = ''; S.managePage = 0; S.sessionKnown = 0; S.sessionUnknown = 0; S.sessionKnownIds = {}; S.studyMode = 'vocab'; S.addType = 'vocab'; S.statsPeriod = 7; S.statsMode = ''; S.statsMetric = 'cards'; S.idleNote = false; clearIdleTimer();
+  S.filterLabel = ''; S.manageFilter = ''; S.manageTypeFilter = ''; S.shuffleMode = false; S.shuffleQueue = []; S.direction = 'en-ru'; S.importOpen = false; S.importMsg = ''; S.addMsg = ''; S.managePage = 0; S.sessionKnown = 0; S.sessionUnknown = 0; S.sessionKnownIds = {}; S.studyMode = 'vocab'; S.addType = 'vocab'; S.statsPeriod = 7; S.statsMode = ''; S.statsMetric = 'cards'; S.idleNote = false; S.difficultyFilter = ''; S.bookmarkFilter = false; S.practiceMode = false; clearIdleTimer();
   localStorage.removeItem('fc_token');
   localStorage.removeItem('fc_gist_id');
   render(); updateNav();
@@ -1611,9 +1899,11 @@ function updateNav() {
     } else {
       var studyActive = S.view === 'study' && S.studyMode === 'vocab';
       var sitActive   = S.view === 'study' && S.studyMode === 'situation';
+      var intActive   = S.view === 'study' && S.studyMode === 'interview';
       nav.innerHTML =
         '<button class="' + (studyActive ? 'active' : '') + '" onclick="showStudyMode(\'vocab\')">Study</button>' +
         '<button class="' + (sitActive   ? 'active' : '') + '" onclick="showStudyMode(\'situation\')">Situations</button>' +
+        '<button class="' + (intActive   ? 'active' : '') + '" onclick="showStudyMode(\'interview\')">Interview</button>' +
         '<button class="' + (S.view === 'manage' ? 'active' : '') + '" onclick="showView(\'manage\')">Cards</button>' +
         '<button class="' + (S.view === 'stats'  ? 'active' : '') + '" onclick="showView(\'stats\')">Stats</button>' +
         '<button class="reset-btn" onclick="showTokenScreen()" title="Token settings">⚙</button>';
