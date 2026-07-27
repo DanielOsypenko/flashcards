@@ -1,0 +1,1178 @@
+[
+  {
+    "question": "What does the chmod command do and how do you make a file executable?",
+    "answer": "chmod changes file permissions in Linux. To make a file executable, run 'chmod +x filename'. You can also use numeric notation like 'chmod 755 filename' which gives the owner read/write/execute, and group/others read/execute.",
+    "label": "Bash/Linux",
+    "type": "interview",
+    "difficulty": "easy"
+  },
+  {
+    "question": "What is the difference between chown and chmod?",
+    "answer": "chmod changes file permissions (read, write, execute) while chown changes file ownership (user and group). For example, 'chown user:group file' changes who owns the file, whereas 'chmod 644 file' changes what actions are allowed on it.",
+    "label": "Bash/Linux",
+    "type": "interview",
+    "difficulty": "easy"
+  },
+  {
+    "question": "How do you search for a string in files recursively using grep?",
+    "answer": "Use 'grep -r \"pattern\" /path/to/directory'. Add -i for case-insensitive search, -l to show only filenames, and -n to show line numbers. For example, 'grep -rn \"error\" /var/log/' searches all files under /var/log for the word error and shows line numbers.",
+    "label": "Bash/Linux",
+    "type": "interview",
+    "difficulty": "easy"
+  },
+  {
+    "question": "How does the find command work? Give an example of finding files modified in the last 24 hours.",
+    "answer": "The find command searches for files and directories based on various criteria. To find files modified in the last 24 hours: 'find /path -type f -mtime -1'. You can combine criteria, for example 'find / -name \"*.log\" -size +100M' finds log files larger than 100MB.",
+    "label": "Bash/Linux",
+    "type": "interview",
+    "difficulty": "easy"
+  },
+  {
+    "question": "What is the difference between pipes (|) and redirections (>, >>) in Bash?",
+    "answer": "Pipes send the stdout of one command as stdin to another command, e.g., 'ls | grep txt'. Redirections send output to a file: '>' overwrites the file and '>>' appends to it. For example, 'echo hello > file.txt' overwrites, while 'echo hello >> file.txt' appends.",
+    "label": "Bash/Linux",
+    "type": "interview",
+    "difficulty": "easy"
+  },
+  {
+    "question": "How do you view running processes and kill a specific one?",
+    "answer": "Use 'ps aux' to list all running processes or 'top'/'htop' for an interactive view. To kill a process, use 'kill PID' for a graceful termination (SIGTERM) or 'kill -9 PID' for a forceful kill (SIGKILL). You can find the PID with 'ps aux | grep process_name'.",
+    "label": "Bash/Linux",
+    "type": "interview",
+    "difficulty": "easy"
+  },
+  {
+    "question": "What is a cron job and how do you schedule one?",
+    "answer": "A cron job is a scheduled task that runs automatically at specified intervals. Edit the crontab with 'crontab -e'. The format is 'minute hour day month weekday command'. For example, '0 2 * * * /script.sh' runs the script every day at 2 AM. Use '*/5 * * * *' for every 5 minutes.",
+    "label": "Bash/Linux",
+    "type": "interview",
+    "difficulty": "medium"
+  },
+  {
+    "question": "Explain the difference between sed and awk.",
+    "answer": "sed is a stream editor primarily used for text substitution and line-based transformations, e.g., 'sed s/old/new/g file'. awk is a pattern-scanning and processing language better suited for column-based data processing, e.g., 'awk '{print $1, $3}' file' prints the first and third columns. awk is more powerful for structured data.",
+    "label": "Bash/Linux",
+    "type": "interview",
+    "difficulty": "medium"
+  },
+  {
+    "question": "How do you check disk usage and free space in Linux?",
+    "answer": "Use 'df -h' to see free space on all mounted filesystems in human-readable format. Use 'du -sh /path' to see the size of a specific directory. 'du -sh *' in a directory shows sizes of all items. 'df -i' shows inode usage, which can also cause 'disk full' issues even when space is available.",
+    "label": "Bash/Linux",
+    "type": "interview",
+    "difficulty": "easy"
+  },
+  {
+    "question": "How do you create a compressed archive with tar?",
+    "answer": "Use 'tar -czf archive.tar.gz /path/to/directory' to create a gzip-compressed archive. The flags are: -c (create), -z (gzip compression), -f (filename). To extract, use 'tar -xzf archive.tar.gz'. For bzip2 compression, replace -z with -j.",
+    "label": "Bash/Linux",
+    "type": "interview",
+    "difficulty": "easy"
+  },
+  {
+    "question": "What is the difference between ssh and scp? How does rsync improve on scp?",
+    "answer": "ssh opens a remote shell session, while scp copies files between hosts over SSH, e.g., 'scp file user@host:/path'. rsync improves on scp by only transferring changed parts of files (delta transfer), supporting resume on interrupted transfers, and allowing compression with -z. Use 'rsync -avz source/ user@host:/dest/'.",
+    "label": "Bash/Linux",
+    "type": "interview",
+    "difficulty": "medium"
+  },
+  {
+    "question": "What is systemd and how do you manage services with it?",
+    "answer": "systemd is the init system and service manager for most modern Linux distributions. Key commands: 'systemctl start/stop/restart servicename' to control services, 'systemctl enable/disable servicename' to manage boot behavior, 'systemctl status servicename' to check status, and 'journalctl -u servicename' to view logs.",
+    "label": "Bash/Linux",
+    "type": "interview",
+    "difficulty": "medium"
+  },
+  {
+    "question": "What are Linux file permission numbers like 755 or 644?",
+    "answer": "Each digit represents permissions for owner, group, and others respectively. Values are: 4=read, 2=write, 1=execute, and they are summed. So 755 means owner has rwx (7=4+2+1), group has r-x (5=4+1), others have r-x (5=4+1). 644 means owner rw, group and others read-only.",
+    "label": "Bash/Linux",
+    "type": "interview",
+    "difficulty": "easy"
+  },
+  {
+    "question": "How do you set and use environment variables in Bash?",
+    "answer": "Set a variable with 'export VAR=value' to make it available to child processes, or 'VAR=value' for the current shell only. Access it with '$VAR' or '${VAR}'. To persist across sessions, add the export line to ~/.bashrc or ~/.bash_profile. View all with 'env' or 'printenv'.",
+    "label": "Bash/Linux",
+    "type": "interview",
+    "difficulty": "easy"
+  },
+  {
+    "question": "What does the 'set -e' option do in a Bash script and why is it useful?",
+    "answer": "set -e causes a Bash script to exit immediately if any command returns a non-zero exit status. It is useful for preventing scripts from continuing after errors and producing unexpected results. Often combined with 'set -o pipefail' to also catch errors in piped commands, and 'set -u' to treat unset variables as errors.",
+    "label": "Bash/Linux",
+    "type": "interview",
+    "difficulty": "medium"
+  },
+  {
+    "question": "What is the difference between stdout (1) and stderr (2) and how do you redirect them?",
+    "answer": "stdout (file descriptor 1) is for normal output and stderr (file descriptor 2) is for error messages. Redirect stderr with '2> errors.txt', both to the same file with '&> all.txt' or '> file 2>&1'. This separation lets you capture errors separately from normal output, which is essential for logging and debugging.",
+    "label": "Bash/Linux",
+    "type": "interview",
+    "difficulty": "medium"
+  },
+  {
+    "question": "How do you check which ports are open and listening on a Linux system?",
+    "answer": "Use 'ss -tlnp' or the older 'netstat -tlnp' to show TCP listening ports with process information. The flags: -t (TCP), -l (listening), -n (numeric, no DNS resolution), -p (show process). You can also use 'lsof -i :port_number' to check a specific port.",
+    "label": "Bash/Linux",
+    "type": "interview",
+    "difficulty": "medium"
+  },
+  {
+    "question": "What is the Ceph architecture at a high level?",
+    "answer": "Ceph is a distributed storage system with several daemon types: MON (monitors) maintain cluster state and maps, OSD (object storage daemons) store data and handle replication, MDS (metadata servers) manage metadata for CephFS, and MGR (managers) provide monitoring and orchestration. All data is stored as objects in RADOS, the underlying object store.",
+    "label": "Storage & Ceph",
+    "type": "interview",
+    "difficulty": "medium"
+  },
+  {
+    "question": "What is RADOS in Ceph?",
+    "answer": "RADOS (Reliable Autonomic Distributed Object Store) is the core object storage layer of Ceph. All storage types (block, file, object) are built on top of RADOS. It provides self-healing, self-managing storage by distributing data across OSDs using the CRUSH algorithm, handling replication, and ensuring data consistency.",
+    "label": "Storage & Ceph",
+    "type": "interview",
+    "difficulty": "medium"
+  },
+  {
+    "question": "What is a Ceph pool and what are the two types?",
+    "answer": "A Ceph pool is a logical partition for storing objects. The two types are replicated pools, which maintain multiple full copies of data across OSDs for redundancy, and erasure-coded pools, which split data into fragments with parity chunks for more storage-efficient protection. Replicated pools are better for performance, erasure-coded for capacity.",
+    "label": "Storage & Ceph",
+    "type": "interview",
+    "difficulty": "medium"
+  },
+  {
+    "question": "What are Placement Groups (PGs) in Ceph?",
+    "answer": "Placement Groups are an intermediate mapping layer between objects and OSDs. Instead of tracking individual object placement, Ceph maps objects to PGs using a hash, then maps PGs to OSDs using CRUSH. This reduces the amount of metadata needed. The number of PGs per pool affects performance and should be tuned based on cluster size.",
+    "label": "Storage & Ceph",
+    "type": "interview",
+    "difficulty": "medium"
+  },
+  {
+    "question": "What is the CRUSH map and why is it important?",
+    "answer": "The CRUSH (Controlled Replication Under Scalable Hashing) map defines the topology of the cluster and the rules for data placement. It determines how data is distributed across failure domains like hosts, racks, and data centers. CRUSH allows Ceph to calculate data placement algorithmically without a central lookup table, making it highly scalable.",
+    "label": "Storage & Ceph",
+    "type": "interview",
+    "difficulty": "medium"
+  },
+  {
+    "question": "What is Ceph RBD?",
+    "answer": "RBD (RADOS Block Device) provides block storage from the Ceph cluster. It creates virtual block devices that are striped across objects in RADOS. RBD supports features like thin provisioning, snapshots, and cloning. It is commonly used as persistent storage for virtual machines and Kubernetes PVCs.",
+    "label": "Storage & Ceph",
+    "type": "interview",
+    "difficulty": "easy"
+  },
+  {
+    "question": "What is CephFS and when would you use it?",
+    "answer": "CephFS is a POSIX-compliant distributed file system built on top of RADOS. It uses MDS (Metadata Server) daemons to manage the directory hierarchy and file metadata. Use CephFS when you need shared file access from multiple clients simultaneously, such as shared home directories or media workflows where traditional file system semantics are required.",
+    "label": "Storage & Ceph",
+    "type": "interview",
+    "difficulty": "easy"
+  },
+  {
+    "question": "What is the Ceph RadosGW (RGW) and how does it relate to S3?",
+    "answer": "RadosGW is Ceph's object storage gateway that provides S3-compatible and Swift-compatible REST APIs. It translates S3 API calls into RADOS object operations. This allows applications written for AWS S3 to work with on-premises Ceph storage. It supports features like buckets, ACLs, multipart uploads, and versioning.",
+    "label": "Storage & Ceph",
+    "type": "interview",
+    "difficulty": "medium"
+  },
+  {
+    "question": "What is the role of MON daemons in Ceph?",
+    "answer": "MON (Monitor) daemons maintain the cluster map, which includes the monitor map, OSD map, PG map, CRUSH map, and MDS map. They provide consensus using Paxos and track the cluster state. You need an odd number of monitors (typically 3 or 5) to achieve quorum and tolerate failures.",
+    "label": "Storage & Ceph",
+    "type": "interview",
+    "difficulty": "medium"
+  },
+  {
+    "question": "What is ODF (OpenShift Data Foundation) and what does it provide?",
+    "answer": "ODF (formerly OpenShift Container Storage) is Red Hat's operator for running Ceph on OpenShift/Kubernetes. It deploys and manages Ceph clusters as pods, providing block (RBD), file (CephFS), and object (RGW/S3) storage through Kubernetes storage classes. It automates operations like scaling, upgrades, and failure recovery.",
+    "label": "Storage & Ceph",
+    "type": "interview",
+    "difficulty": "medium"
+  },
+  {
+    "question": "What is the difference between a PV and a PVC in Kubernetes?",
+    "answer": "A PersistentVolume (PV) is a piece of storage provisioned in the cluster, representing actual storage resources. A PersistentVolumeClaim (PVC) is a request for storage by a user. PVCs bind to PVs that satisfy their requirements (size, access mode, storage class). Think of PV as the supply and PVC as the demand.",
+    "label": "Storage & Ceph",
+    "type": "interview",
+    "difficulty": "easy"
+  },
+  {
+    "question": "What is a StorageClass in Kubernetes?",
+    "answer": "A StorageClass defines a type of storage with a provisioner and parameters. It enables dynamic provisioning of PersistentVolumes when a PVC is created. For example, a StorageClass might specify Ceph RBD as the provisioner with a specific pool and replication factor. Different classes can offer different performance tiers or redundancy levels.",
+    "label": "Storage & Ceph",
+    "type": "interview",
+    "difficulty": "easy"
+  },
+  {
+    "question": "What are the access modes for a PersistentVolume?",
+    "answer": "There are three access modes: ReadWriteOnce (RWO) allows read-write by a single node, ReadOnlyMany (ROX) allows read-only by many nodes, and ReadWriteMany (RWX) allows read-write by many nodes. RBD typically supports RWO, while CephFS supports RWX. The access mode constrains how the volume can be mounted.",
+    "label": "Storage & Ceph",
+    "type": "interview",
+    "difficulty": "easy"
+  },
+  {
+    "question": "What happens when a Ceph OSD fails?",
+    "answer": "When an OSD fails, the monitors detect it via heartbeat timeouts and mark it as 'down'. After a configurable timeout, it is marked 'out' and Ceph begins re-replicating (backfilling) the data that was on the failed OSD to other OSDs to restore the desired replication level. This self-healing happens automatically.",
+    "label": "Storage & Ceph",
+    "type": "interview",
+    "difficulty": "medium"
+  },
+  {
+    "question": "How do you check the health status of a Ceph cluster?",
+    "answer": "Use 'ceph status' or 'ceph -s' for an overall cluster summary showing health, mon quorum, OSD status, and pool usage. 'ceph health detail' shows specific warnings. 'ceph osd tree' shows the OSD hierarchy. 'ceph df' shows storage utilization. Common health states are HEALTH_OK, HEALTH_WARN, and HEALTH_ERR.",
+    "label": "Storage & Ceph",
+    "type": "interview",
+    "difficulty": "easy"
+  },
+  {
+    "question": "What is the difference between Ceph replication and erasure coding?",
+    "answer": "Replication stores full copies of data (e.g., 3x replication uses 3x storage) and is simpler and faster for reads/writes. Erasure coding splits data into k data chunks and m parity chunks, requiring less total storage (e.g., k=4, m=2 uses 1.5x storage). Erasure coding is more storage-efficient but has higher CPU overhead and is typically used for cold data.",
+    "label": "Storage & Ceph",
+    "type": "interview",
+    "difficulty": "medium"
+  },
+  {
+    "question": "What are the layers of the TCP/IP model?",
+    "answer": "The TCP/IP model has four layers: Application (HTTP, DNS, SMTP), Transport (TCP, UDP), Internet (IP, ICMP, ARP), and Network Access/Link (Ethernet, Wi-Fi). This is simpler than the OSI model's seven layers. Data is encapsulated as it moves down the stack, with each layer adding its own header.",
+    "label": "Networking",
+    "type": "interview",
+    "difficulty": "easy"
+  },
+  {
+    "question": "What is DNS and how does a DNS lookup work?",
+    "answer": "DNS (Domain Name System) translates domain names to IP addresses. A lookup follows these steps: the client checks its local cache, then queries a recursive resolver, which checks root nameservers, then TLD nameservers (.com, .org), then authoritative nameservers for the domain. Common record types include A (IPv4), AAAA (IPv6), CNAME (alias), and MX (mail).",
+    "label": "Networking",
+    "type": "interview",
+    "difficulty": "easy"
+  },
+  {
+    "question": "What is CIDR notation and how do you read it?",
+    "answer": "CIDR (Classless Inter-Domain Routing) notation specifies IP ranges using the format IP/prefix_length. The prefix length indicates how many bits are the network portion. For example, 192.168.1.0/24 means the first 24 bits are the network (255.255.255.0 mask), leaving 8 bits for 254 usable host addresses. A /16 gives 65534 hosts.",
+    "label": "Networking",
+    "type": "interview",
+    "difficulty": "medium"
+  },
+  {
+    "question": "What is the difference between TCP and UDP?",
+    "answer": "TCP is connection-oriented, providing reliable ordered delivery with error checking, flow control, and retransmission. UDP is connectionless and provides faster but unreliable delivery with no guarantee of order. TCP is used for HTTP, SSH, and file transfer. UDP is used for DNS queries, streaming, gaming, and VoIP where speed matters more than reliability.",
+    "label": "Networking",
+    "type": "interview",
+    "difficulty": "easy"
+  },
+  {
+    "question": "What is NAT and why is it used?",
+    "answer": "NAT (Network Address Translation) translates private IP addresses to public IP addresses and vice versa. It is primarily used to conserve the limited IPv4 address space by allowing multiple devices on a private network to share a single public IP. It also provides a basic layer of security by hiding internal network structure from the internet.",
+    "label": "Networking",
+    "type": "interview",
+    "difficulty": "easy"
+  },
+  {
+    "question": "Explain the SSL/TLS handshake process at a high level.",
+    "answer": "The TLS handshake establishes a secure connection: (1) Client Hello - client sends supported cipher suites and TLS version. (2) Server Hello - server picks a cipher suite and sends its certificate. (3) Client verifies the certificate against trusted CAs. (4) Key exchange occurs to establish a shared secret. (5) Both sides derive session keys and begin encrypted communication.",
+    "label": "Networking",
+    "type": "interview",
+    "difficulty": "medium"
+  },
+  {
+    "question": "What is the difference between HTTP and HTTPS?",
+    "answer": "HTTPS is HTTP encrypted with TLS/SSL. HTTP sends data in plain text on port 80, while HTTPS encrypts all communication on port 443, protecting against eavesdropping and man-in-the-middle attacks. HTTPS requires a TLS certificate from a trusted CA. All modern web applications should use HTTPS.",
+    "label": "Networking",
+    "type": "interview",
+    "difficulty": "easy"
+  },
+  {
+    "question": "What is DHCP and how does it work?",
+    "answer": "DHCP (Dynamic Host Configuration Protocol) automatically assigns IP addresses and network configuration to devices. The process follows DORA: Discover (client broadcasts a request), Offer (server offers an IP), Request (client accepts an offer), Acknowledge (server confirms). DHCP also provides subnet mask, default gateway, and DNS server information.",
+    "label": "Networking",
+    "type": "interview",
+    "difficulty": "easy"
+  },
+  {
+    "question": "What is a subnet and how does subnetting work?",
+    "answer": "A subnet divides a larger network into smaller logical segments. Subnetting uses a subnet mask to split the IP address into network and host portions. For example, a /24 network (255.255.255.0) allows 254 hosts per subnet. Subnetting improves security, reduces broadcast domains, and makes networks more manageable.",
+    "label": "Networking",
+    "type": "interview",
+    "difficulty": "medium"
+  },
+  {
+    "question": "What are the seven layers of the OSI model?",
+    "answer": "From bottom to top: (1) Physical - cables, signals. (2) Data Link - Ethernet, MAC addresses. (3) Network - IP, routing. (4) Transport - TCP, UDP. (5) Session - manages connections. (6) Presentation - encryption, compression. (7) Application - HTTP, DNS, SMTP. A common mnemonic is 'Please Do Not Throw Sausage Pizza Away'.",
+    "label": "Networking",
+    "type": "interview",
+    "difficulty": "easy"
+  },
+  {
+    "question": "What is a load balancer and what are L4 vs L7 load balancers?",
+    "answer": "A load balancer distributes traffic across multiple backend servers to improve availability and performance. L4 (transport layer) balancers route based on IP and port, are faster, and cannot inspect application data. L7 (application layer) balancers can route based on HTTP headers, URL paths, or cookies, enabling smarter routing like path-based or host-based rules.",
+    "label": "Networking",
+    "type": "interview",
+    "difficulty": "medium"
+  },
+  {
+    "question": "What is a VPN and how does it work?",
+    "answer": "A VPN (Virtual Private Network) creates an encrypted tunnel between your device and a VPN server, protecting traffic from interception. It encapsulates packets in an encrypted wrapper and routes them through the VPN server. Common protocols include OpenVPN, WireGuard, and IPsec. VPNs are used for secure remote access to private networks and privacy.",
+    "label": "Networking",
+    "type": "interview",
+    "difficulty": "easy"
+  },
+  {
+    "question": "What is the difference between a firewall and a security group?",
+    "answer": "A firewall is a general network security device or software that filters traffic based on rules (iptables, firewalld). Security groups are cloud-specific virtual firewalls (e.g., AWS) that control inbound and outbound traffic for instances. Security groups are stateful (return traffic is automatically allowed) and operate at the instance level rather than the subnet level.",
+    "label": "Networking",
+    "type": "interview",
+    "difficulty": "medium"
+  },
+  {
+    "question": "What is the difference between a router and a switch?",
+    "answer": "A switch operates at Layer 2 (data link) and forwards frames within the same network using MAC addresses. A router operates at Layer 3 (network) and routes packets between different networks using IP addresses. Switches connect devices within a LAN, while routers connect different LANs or connect a LAN to the internet.",
+    "label": "Networking",
+    "type": "interview",
+    "difficulty": "easy"
+  },
+  {
+    "question": "What are some common network ports you should know?",
+    "answer": "Key ports: 22 (SSH), 80 (HTTP), 443 (HTTPS), 53 (DNS), 25 (SMTP), 3306 (MySQL), 5432 (PostgreSQL), 6379 (Redis), 8080 (HTTP alt), 3389 (RDP), 2379-2380 (etcd), 6443 (Kubernetes API), 10250 (kubelet). Ports below 1024 are privileged and require root access.",
+    "label": "Networking",
+    "type": "interview",
+    "difficulty": "easy"
+  },
+  {
+    "question": "What is a routing table and how does routing work?",
+    "answer": "A routing table contains rules that determine where network packets should be forwarded. Each entry has a destination network, subnet mask, gateway, and interface. When a packet arrives, the router checks the routing table for the most specific matching route (longest prefix match). If no match is found, the default route (0.0.0.0/0) is used.",
+    "label": "Networking",
+    "type": "interview",
+    "difficulty": "medium"
+  },
+  {
+    "question": "What is ARP and how does it work?",
+    "answer": "ARP (Address Resolution Protocol) maps IP addresses to MAC addresses on a local network. When a device needs to send a frame to another device on the same subnet, it broadcasts an ARP request asking 'who has this IP?' The device with that IP responds with its MAC address. Results are cached in the ARP table to avoid repeated requests.",
+    "label": "Networking",
+    "type": "interview",
+    "difficulty": "medium"
+  },
+  {
+    "question": "What is a container and how does it differ from a virtual machine?",
+    "answer": "A container is an isolated process that shares the host OS kernel, using namespaces for isolation and cgroups for resource limits. Unlike VMs, containers do not need a separate OS, making them much lighter (MBs vs GBs), faster to start (seconds vs minutes), and more efficient. VMs provide stronger isolation via a hypervisor and separate kernel per VM.",
+    "label": "Containers",
+    "type": "interview",
+    "difficulty": "easy"
+  },
+  {
+    "question": "What are the key instructions in a Dockerfile?",
+    "answer": "FROM sets the base image. RUN executes commands during build. COPY/ADD copy files into the image. WORKDIR sets the working directory. ENV sets environment variables. EXPOSE documents the port. CMD sets the default command (can be overridden). ENTRYPOINT sets the main executable (harder to override). ARG defines build-time variables.",
+    "label": "Containers",
+    "type": "interview",
+    "difficulty": "easy"
+  },
+  {
+    "question": "What is a multi-stage Docker build and why use it?",
+    "answer": "A multi-stage build uses multiple FROM statements in a Dockerfile. You can compile or build in one stage and copy only the final artifacts to a smaller final stage. This produces much smaller images by excluding build tools and dependencies. For example, build a Go binary in a golang image, then copy just the binary into a minimal alpine or scratch image.",
+    "label": "Containers",
+    "type": "interview",
+    "difficulty": "medium"
+  },
+  {
+    "question": "What are Linux namespaces and how do containers use them?",
+    "answer": "Namespaces provide isolation for containers. Key namespaces: PID (process IDs), NET (network stack), MNT (filesystem mounts), UTS (hostname), IPC (inter-process communication), and USER (user/group IDs). Each container gets its own set of namespaces, so it sees its own process tree, network interfaces, and filesystem, creating the illusion of a separate system.",
+    "label": "Containers",
+    "type": "interview",
+    "difficulty": "medium"
+  },
+  {
+    "question": "What are cgroups and what role do they play in containers?",
+    "answer": "cgroups (control groups) are a Linux kernel feature that limits and accounts for resource usage by processes. Containers use cgroups to restrict CPU, memory, disk I/O, and network bandwidth. For example, setting a memory limit of 512MB via cgroups means the container will be OOM-killed if it exceeds that amount. This prevents one container from monopolizing host resources.",
+    "label": "Containers",
+    "type": "interview",
+    "difficulty": "medium"
+  },
+  {
+    "question": "How do Docker image layers work?",
+    "answer": "Each instruction in a Dockerfile creates a read-only layer. Layers are cached and reused across builds and images, saving disk space and speeding up builds. When a container runs, a thin writable layer is added on top. Ordering Dockerfile instructions from least to most frequently changing maximizes cache usage. The COPY of source code should come last.",
+    "label": "Containers",
+    "type": "interview",
+    "difficulty": "medium"
+  },
+  {
+    "question": "What is a container registry?",
+    "answer": "A container registry is a repository for storing and distributing container images. Docker Hub is the default public registry. Other options include Amazon ECR, Google GCR, Azure ACR, Quay.io, and self-hosted registries like Harbor. Images are pushed with 'docker push' and pulled with 'docker pull'. Registries support tags and image scanning.",
+    "label": "Containers",
+    "type": "interview",
+    "difficulty": "easy"
+  },
+  {
+    "question": "What is the difference between COPY and ADD in a Dockerfile?",
+    "answer": "COPY simply copies files from the build context into the image. ADD does the same but has extra features: it can extract tar archives automatically and can download files from URLs. Best practice is to use COPY unless you specifically need ADD's features, because COPY is more transparent and predictable.",
+    "label": "Containers",
+    "type": "interview",
+    "difficulty": "easy"
+  },
+  {
+    "question": "What is the difference between CMD and ENTRYPOINT?",
+    "answer": "Both specify what runs when a container starts. CMD provides defaults that can be easily overridden by passing arguments to 'docker run'. ENTRYPOINT sets the main command that always runs, and CMD arguments are appended to it. Use ENTRYPOINT for the executable and CMD for default arguments. A common pattern is ENTRYPOINT [\"python\"] CMD [\"app.py\"].",
+    "label": "Containers",
+    "type": "interview",
+    "difficulty": "medium"
+  },
+  {
+    "question": "How does container networking work in Docker?",
+    "answer": "Docker creates a virtual bridge network (docker0) by default. Containers get their own network namespace with a virtual ethernet interface connected to the bridge. Networking modes include: bridge (default, isolated network), host (shares host network stack), none (no networking), and overlay (multi-host networking for Swarm). Containers on the same bridge can communicate by name.",
+    "label": "Containers",
+    "type": "interview",
+    "difficulty": "medium"
+  },
+  {
+    "question": "What are Docker volumes and why are they important?",
+    "answer": "Docker volumes provide persistent storage that survives container restarts and removals. Without volumes, data written inside a container is lost when the container is deleted. Volumes can be named volumes managed by Docker, bind mounts mapping host directories, or tmpfs mounts stored in memory. Use volumes for databases, logs, and any data that needs to persist.",
+    "label": "Containers",
+    "type": "interview",
+    "difficulty": "easy"
+  },
+  {
+    "question": "What is containerd and how does it relate to Docker?",
+    "answer": "containerd is a container runtime that manages the complete container lifecycle: image transfer, storage, container execution, and supervision. Docker uses containerd as its underlying runtime. Kubernetes can use containerd directly without Docker (dockershim was deprecated). containerd implements the CRI (Container Runtime Interface) for Kubernetes integration.",
+    "label": "Containers",
+    "type": "interview",
+    "difficulty": "medium"
+  },
+  {
+    "question": "What is CRI-O?",
+    "answer": "CRI-O is a lightweight container runtime specifically designed for Kubernetes. It implements the CRI (Container Runtime Interface) without any extra features that are unnecessary for Kubernetes. It is the default runtime for OpenShift. Unlike Docker/containerd, CRI-O is purpose-built for Kubernetes and does not include a CLI for building images or running standalone containers.",
+    "label": "Containers",
+    "type": "interview",
+    "difficulty": "medium"
+  },
+  {
+    "question": "How do you reduce Docker image size?",
+    "answer": "Key strategies: use multi-stage builds to exclude build tools, use smaller base images (alpine, distroless, scratch), minimize layers by combining RUN commands, use .dockerignore to exclude unnecessary files, remove package manager caches (apt-get clean, rm -rf /var/lib/apt/lists/*), and avoid installing unnecessary packages.",
+    "label": "Containers",
+    "type": "interview",
+    "difficulty": "medium"
+  },
+  {
+    "question": "What is a Docker Compose file used for?",
+    "answer": "Docker Compose defines multi-container applications in a YAML file. It specifies services, networks, and volumes, allowing you to start an entire application stack with 'docker compose up'. It is useful for local development environments where you need multiple services (app, database, cache) to work together with defined dependencies and shared networking.",
+    "label": "Containers",
+    "type": "interview",
+    "difficulty": "easy"
+  },
+  {
+    "question": "What security best practices should you follow for container images?",
+    "answer": "Run containers as non-root user (USER directive), use minimal base images, scan images for vulnerabilities, do not store secrets in images, use specific image tags instead of 'latest', use read-only filesystems when possible, drop unnecessary Linux capabilities, and regularly update base images to get security patches.",
+    "label": "Containers",
+    "type": "interview",
+    "difficulty": "medium"
+  },
+  {
+    "question": "What is the difference between 'docker run' and 'docker exec'?",
+    "answer": "'docker run' creates and starts a new container from an image. 'docker exec' runs a command inside an already running container. For example, 'docker run -d nginx' starts a new nginx container, while 'docker exec -it container_id bash' opens a shell inside that running container. 'exec' is commonly used for debugging.",
+    "label": "Containers",
+    "type": "interview",
+    "difficulty": "easy"
+  },
+  {
+    "question": "What is a Pod in Kubernetes?",
+    "answer": "A Pod is the smallest deployable unit in Kubernetes, consisting of one or more containers that share the same network namespace, IP address, and storage volumes. Containers in a pod communicate via localhost. Pods are ephemeral - they can be terminated and replaced at any time. Typically you run one main container per pod with optional sidecar containers.",
+    "label": "Kubernetes",
+    "type": "interview",
+    "difficulty": "easy"
+  },
+  {
+    "question": "What is a Deployment in Kubernetes?",
+    "answer": "A Deployment manages a set of identical Pods (via a ReplicaSet), ensuring the desired number of replicas are running. It handles rolling updates by gradually replacing old pods with new ones, supports rollback to previous versions, and provides declarative updates. Use 'kubectl rollout status' to monitor and 'kubectl rollout undo' to roll back.",
+    "label": "Kubernetes",
+    "type": "interview",
+    "difficulty": "easy"
+  },
+  {
+    "question": "What are the types of Kubernetes Services?",
+    "answer": "ClusterIP (default) exposes the service on an internal cluster IP. NodePort exposes on each node's IP at a static port (30000-32767). LoadBalancer provisions an external load balancer from the cloud provider. ExternalName maps a service to a DNS name. ClusterIP for internal, NodePort for development, LoadBalancer for production external access.",
+    "label": "Kubernetes",
+    "type": "interview",
+    "difficulty": "medium"
+  },
+  {
+    "question": "What is the difference between a ConfigMap and a Secret?",
+    "answer": "Both store configuration data as key-value pairs. ConfigMaps are for non-sensitive data (config files, environment variables). Secrets are for sensitive data (passwords, tokens, certificates) and are base64-encoded (not encrypted by default). Both can be mounted as files or exposed as environment variables. Secrets should be encrypted at rest with a KMS provider.",
+    "label": "Kubernetes",
+    "type": "interview",
+    "difficulty": "easy"
+  },
+  {
+    "question": "What is a StatefulSet and when would you use it?",
+    "answer": "A StatefulSet manages stateful applications that need stable network identities, persistent storage, and ordered deployment/scaling. Unlike Deployments, pods get predictable names (app-0, app-1, app-2), each can have its own PVC, and they are created/deleted in order. Use StatefulSets for databases, message queues, and distributed systems like Kafka or ZooKeeper.",
+    "label": "Kubernetes",
+    "type": "interview",
+    "difficulty": "medium"
+  },
+  {
+    "question": "What is a DaemonSet?",
+    "answer": "A DaemonSet ensures that a copy of a specific Pod runs on every node (or a subset of nodes) in the cluster. When nodes are added, the DaemonSet automatically adds pods to them. Common use cases include log collectors (Fluentd), monitoring agents (node-exporter), and storage daemons (Ceph OSD). Use nodeSelector or tolerations to target specific nodes.",
+    "label": "Kubernetes",
+    "type": "interview",
+    "difficulty": "easy"
+  },
+  {
+    "question": "What is an Ingress in Kubernetes?",
+    "answer": "An Ingress is an API object that manages external HTTP/HTTPS access to services in the cluster. It provides host-based and path-based routing, SSL/TLS termination, and name-based virtual hosting. An Ingress Controller (like nginx-ingress or Traefik) must be deployed to implement the Ingress rules. It is the standard way to expose HTTP services.",
+    "label": "Kubernetes",
+    "type": "interview",
+    "difficulty": "medium"
+  },
+  {
+    "question": "What is a NetworkPolicy in Kubernetes?",
+    "answer": "A NetworkPolicy controls traffic flow between pods using label selectors. By default, all pods can communicate with each other. NetworkPolicies restrict this by specifying allowed ingress and egress rules. They require a CNI plugin that supports them (Calico, Cilium). For example, you can restrict a database pod to only accept traffic from your app pods.",
+    "label": "Kubernetes",
+    "type": "interview",
+    "difficulty": "medium"
+  },
+  {
+    "question": "What is RBAC in Kubernetes?",
+    "answer": "RBAC (Role-Based Access Control) regulates access to Kubernetes resources. It uses Roles (namespace-scoped) and ClusterRoles (cluster-scoped) to define permissions, and RoleBindings/ClusterRoleBindings to assign them to users, groups, or service accounts. For example, a Role might allow 'get' and 'list' on pods in a specific namespace.",
+    "label": "Kubernetes",
+    "type": "interview",
+    "difficulty": "medium"
+  },
+  {
+    "question": "What is a Kubernetes namespace and why use them?",
+    "answer": "A namespace is a virtual cluster within a physical cluster, providing logical isolation for resources. They are useful for separating environments (dev, staging, prod), teams, or applications. Resource quotas and RBAC can be applied per namespace. Default namespaces include 'default', 'kube-system', and 'kube-public'. Resources within a namespace must have unique names.",
+    "label": "Kubernetes",
+    "type": "interview",
+    "difficulty": "easy"
+  },
+  {
+    "question": "What are liveness and readiness probes?",
+    "answer": "Liveness probes check if a container is alive; if it fails, Kubernetes restarts the container. Readiness probes check if a container is ready to serve traffic; if it fails, the pod is removed from Service endpoints. Both can use HTTP GET, TCP socket, or exec commands. A startup probe can also delay liveness checks for slow-starting applications.",
+    "label": "Kubernetes",
+    "type": "interview",
+    "difficulty": "medium"
+  },
+  {
+    "question": "What is the Horizontal Pod Autoscaler (HPA)?",
+    "answer": "HPA automatically scales the number of pod replicas based on observed metrics like CPU utilization, memory usage, or custom metrics. For example, you can configure HPA to maintain 70% average CPU usage across pods, scaling between 2 and 10 replicas. It checks metrics periodically (default 15 seconds) and adjusts the replica count accordingly.",
+    "label": "Kubernetes",
+    "type": "interview",
+    "difficulty": "medium"
+  },
+  {
+    "question": "What are resource requests and limits in Kubernetes?",
+    "answer": "Requests define the minimum resources a container needs and are used for scheduling decisions (the scheduler finds a node with enough capacity). Limits define the maximum resources a container can use. If a container exceeds its memory limit, it is OOM-killed. If it exceeds its CPU limit, it is throttled. Always set both for production workloads.",
+    "label": "Kubernetes",
+    "type": "interview",
+    "difficulty": "medium"
+  },
+  {
+    "question": "What are taints and tolerations?",
+    "answer": "Taints are applied to nodes to repel pods that do not have a matching toleration. Tolerations are applied to pods to allow them to schedule on tainted nodes. For example, you might taint GPU nodes so only ML workloads (with the right toleration) run there. Taints have effects: NoSchedule, PreferNoSchedule, and NoExecute.",
+    "label": "Kubernetes",
+    "type": "interview",
+    "difficulty": "medium"
+  },
+  {
+    "question": "What is node affinity in Kubernetes?",
+    "answer": "Node affinity is a set of rules that constrain which nodes a pod can be scheduled on, based on node labels. It comes in two types: requiredDuringSchedulingIgnoredDuringExecution (hard requirement) and preferredDuringSchedulingIgnoredDuringExecution (soft preference). For example, you can require pods to run on nodes in a specific availability zone.",
+    "label": "Kubernetes",
+    "type": "interview",
+    "difficulty": "medium"
+  },
+  {
+    "question": "What is Helm and what problem does it solve?",
+    "answer": "Helm is a package manager for Kubernetes that bundles related resources into reusable charts. A chart contains templates for Kubernetes manifests with configurable values. Helm solves the problem of managing complex multi-resource deployments, versioning releases, and sharing application definitions. Key commands: 'helm install', 'helm upgrade', 'helm rollback', 'helm list'.",
+    "label": "Kubernetes",
+    "type": "interview",
+    "difficulty": "easy"
+  },
+  {
+    "question": "What is a Kubernetes operator?",
+    "answer": "An operator extends Kubernetes with custom controllers that manage complex applications using Custom Resource Definitions (CRDs). It encodes operational knowledge (install, scale, backup, upgrade) into software. For example, a database operator can automate creating replicas, handling failover, and performing backups - tasks that would normally require a human DBA.",
+    "label": "Kubernetes",
+    "type": "interview",
+    "difficulty": "medium"
+  },
+  {
+    "question": "How do you debug a pod that is in CrashLoopBackOff?",
+    "answer": "First, check logs with 'kubectl logs pod-name' and 'kubectl logs pod-name --previous' for the crashed container's logs. Use 'kubectl describe pod pod-name' to see events and exit codes. Common causes: application errors, missing config/secrets, failed health checks, or insufficient resources. You can also use 'kubectl exec' to inspect a running container.",
+    "label": "Kubernetes",
+    "type": "interview",
+    "difficulty": "medium"
+  },
+  {
+    "question": "What are some essential kubectl commands?",
+    "answer": "Key commands: 'kubectl get pods/svc/deploy' to list resources, 'kubectl describe' for details, 'kubectl logs' for container logs, 'kubectl exec -it pod -- bash' for shell access, 'kubectl apply -f' to create/update from files, 'kubectl delete' to remove resources, 'kubectl scale deploy --replicas=N' to scale, and 'kubectl port-forward' for local access.",
+    "label": "Kubernetes",
+    "type": "interview",
+    "difficulty": "easy"
+  },
+  {
+    "question": "How does Kubernetes scheduling work?",
+    "answer": "The kube-scheduler assigns pods to nodes in two phases: filtering (removes nodes that do not meet requirements like resource requests, node selectors, taints, affinity rules) and scoring (ranks remaining nodes by criteria like resource balance and affinity preferences). The pod is assigned to the highest-scoring node. Custom schedulers can also be used.",
+    "label": "Kubernetes",
+    "type": "interview",
+    "difficulty": "medium"
+  },
+  {
+    "question": "What is the difference between a Deployment and a StatefulSet?",
+    "answer": "Deployments are for stateless applications - pods are interchangeable, have random names, and share storage. StatefulSets are for stateful applications - pods have stable identities (app-0, app-1), persistent per-pod storage, and ordered startup/shutdown. Use Deployment for web servers and APIs, StatefulSet for databases and distributed data stores.",
+    "label": "Kubernetes",
+    "type": "interview",
+    "difficulty": "easy"
+  },
+  {
+    "question": "What is a Kubernetes Service Account?",
+    "answer": "A Service Account provides an identity for processes running in pods. Each pod uses a service account (default if not specified) to authenticate with the Kubernetes API. Service accounts can be bound to Roles via RoleBindings for RBAC. They are used when pods need to interact with the API, like operators or CI/CD pipelines running in-cluster.",
+    "label": "Kubernetes",
+    "type": "interview",
+    "difficulty": "medium"
+  },
+  {
+    "question": "What is a ReplicaSet and how does it relate to a Deployment?",
+    "answer": "A ReplicaSet ensures that a specified number of identical pod replicas are running at any time. If a pod dies, the ReplicaSet creates a new one. Deployments manage ReplicaSets and provide declarative updates. You rarely create ReplicaSets directly - instead, you create Deployments which create and manage ReplicaSets behind the scenes during rolling updates.",
+    "label": "Kubernetes",
+    "type": "interview",
+    "difficulty": "easy"
+  },
+  {
+    "question": "What is a TLS/SSL certificate and how does it work?",
+    "answer": "A TLS certificate is a digital document that verifies the identity of a server and enables encrypted communication. It contains the server's public key, domain name, issuer (CA), and expiry date. The Certificate Authority (CA) digitally signs the certificate, creating a chain of trust. Clients verify the certificate against trusted CAs before establishing an encrypted connection.",
+    "label": "Security",
+    "type": "interview",
+    "difficulty": "easy"
+  },
+  {
+    "question": "What is the difference between authentication and authorization?",
+    "answer": "Authentication verifies WHO you are (identity), using credentials like passwords, tokens, or certificates. Authorization determines WHAT you can do (permissions) after authentication. For example, logging in with your username/password is authentication. RBAC rules that allow or deny access to specific resources are authorization. Authentication always comes first.",
+    "label": "Security",
+    "type": "interview",
+    "difficulty": "easy"
+  },
+  {
+    "question": "What is OAuth2 and how does it work at a high level?",
+    "answer": "OAuth2 is an authorization framework that lets applications access resources on behalf of a user without sharing credentials. The flow involves: (1) app redirects user to auth server, (2) user authenticates and grants consent, (3) auth server returns an authorization code, (4) app exchanges code for an access token, (5) app uses token to access APIs. It separates authentication from authorization.",
+    "label": "Security",
+    "type": "interview",
+    "difficulty": "medium"
+  },
+  {
+    "question": "What is OIDC (OpenID Connect)?",
+    "answer": "OIDC is an identity layer built on top of OAuth2 that adds authentication. While OAuth2 only handles authorization (access tokens), OIDC adds an ID token (JWT) that contains user identity information (claims) like name and email. This lets applications verify the user's identity. Common providers include Google, Azure AD, and Keycloak.",
+    "label": "Security",
+    "type": "interview",
+    "difficulty": "medium"
+  },
+  {
+    "question": "What is encryption at rest vs encryption in transit?",
+    "answer": "Encryption at rest protects data stored on disk using algorithms like AES-256. Examples include encrypted EBS volumes and database encryption. Encryption in transit protects data moving over networks using TLS/SSL. Both should be used together for defense in depth. In Kubernetes, etcd should be encrypted at rest, and all API communication uses TLS.",
+    "label": "Security",
+    "type": "interview",
+    "difficulty": "easy"
+  },
+  {
+    "question": "What is a security context in Kubernetes?",
+    "answer": "A security context defines privilege and access control settings for a pod or container. Key settings include: runAsUser/runAsGroup (specify user ID), runAsNonRoot (prevent root), readOnlyRootFilesystem (prevent writes), allowPrivilegeEscalation (prevent gaining more privileges), and capabilities (add/drop Linux capabilities). These are set in the pod spec.",
+    "label": "Security",
+    "type": "interview",
+    "difficulty": "medium"
+  },
+  {
+    "question": "What is SELinux and what does it do?",
+    "answer": "SELinux (Security-Enhanced Linux) is a mandatory access control system in the Linux kernel. Unlike standard file permissions (discretionary), SELinux enforces policies that restrict what processes can access, even for root. It labels all files, processes, and ports with security contexts and enforces rules between them. Modes: Enforcing, Permissive, and Disabled.",
+    "label": "Security",
+    "type": "interview",
+    "difficulty": "medium"
+  },
+  {
+    "question": "How should secrets be managed in a production environment?",
+    "answer": "Use dedicated secrets management tools like HashiCorp Vault, AWS Secrets Manager, or Azure Key Vault. Never store secrets in code or environment variables in plain text. In Kubernetes, encrypt secrets at rest with a KMS provider. Use external-secrets-operator to sync from external vaults. Rotate secrets regularly and use short-lived credentials where possible.",
+    "label": "Security",
+    "type": "interview",
+    "difficulty": "medium"
+  },
+  {
+    "question": "What is a Certificate Authority (CA) and the chain of trust?",
+    "answer": "A Certificate Authority is a trusted entity that issues and signs digital certificates. The chain of trust works hierarchically: a root CA signs intermediate CAs, which sign end-entity (server) certificates. Browsers and OSes ship with trusted root CAs. When verifying a certificate, the client walks up the chain to a trusted root. Let's Encrypt is a popular free CA.",
+    "label": "Security",
+    "type": "interview",
+    "difficulty": "medium"
+  },
+  {
+    "question": "What are Kubernetes NetworkPolicies and how do they improve security?",
+    "answer": "NetworkPolicies act as a firewall for pod-to-pod traffic. By default, all pods can communicate freely. NetworkPolicies use label selectors to define allowed ingress and egress rules. They follow a whitelist model - once a policy selects a pod, only explicitly allowed traffic is permitted. This implements the principle of least privilege for network access.",
+    "label": "Security",
+    "type": "interview",
+    "difficulty": "medium"
+  },
+  {
+    "question": "What is mutual TLS (mTLS)?",
+    "answer": "In standard TLS, only the server presents a certificate. In mutual TLS, both the client and server present certificates and verify each other's identity. This provides stronger authentication since both sides prove their identity. mTLS is commonly used in service meshes (Istio, Linkerd) for secure service-to-service communication within a cluster.",
+    "label": "Security",
+    "type": "interview",
+    "difficulty": "medium"
+  },
+  {
+    "question": "What is the principle of least privilege?",
+    "answer": "The principle of least privilege means granting only the minimum permissions necessary to perform a task. In practice: users get only the roles they need, service accounts have narrow RBAC permissions, containers run as non-root, network policies restrict traffic to what is required, and security groups allow only necessary ports. This limits the blast radius of a compromise.",
+    "label": "Security",
+    "type": "interview",
+    "difficulty": "easy"
+  },
+  {
+    "question": "What is Big O notation and why does it matter?",
+    "answer": "Big O notation describes the upper bound of an algorithm's time or space complexity as input size grows. It helps compare algorithm efficiency. Common complexities from best to worst: O(1) constant, O(log n) logarithmic, O(n) linear, O(n log n) linearithmic, O(n^2) quadratic, O(2^n) exponential. It matters because a poorly chosen algorithm can make a feature unusable at scale.",
+    "label": "Algorithms",
+    "type": "interview",
+    "difficulty": "easy"
+  },
+  {
+    "question": "How does binary search work and what is its time complexity?",
+    "answer": "Binary search finds a target value in a sorted array by repeatedly dividing the search range in half. Compare the target to the middle element: if equal, found; if less, search the left half; if greater, search the right half. Time complexity is O(log n) since we halve the search space each step. Requires the array to be sorted.",
+    "label": "Algorithms",
+    "type": "interview",
+    "difficulty": "easy"
+  },
+  {
+    "question": "How does quicksort work and what is its time complexity?",
+    "answer": "Quicksort picks a pivot element, partitions the array into elements less than and greater than the pivot, then recursively sorts each partition. Average time complexity is O(n log n), but worst case is O(n^2) when the pivot is always the smallest or largest element. In practice it is very fast due to good cache performance. Space complexity is O(log n) for the call stack.",
+    "label": "Algorithms",
+    "type": "interview",
+    "difficulty": "medium"
+  },
+  {
+    "question": "How does merge sort work and how does it compare to quicksort?",
+    "answer": "Merge sort divides the array in half recursively until single elements remain, then merges sorted halves back together. It always runs in O(n log n) time regardless of input (no worst case degradation like quicksort). However, it requires O(n) extra space for merging, whereas quicksort sorts in-place. Merge sort is stable (preserves equal element order), quicksort typically is not.",
+    "label": "Algorithms",
+    "type": "interview",
+    "difficulty": "medium"
+  },
+  {
+    "question": "What is a hash table and how does it handle collisions?",
+    "answer": "A hash table maps keys to values using a hash function that converts keys into array indices. Average lookup, insert, and delete are O(1). Collisions occur when two keys hash to the same index. Common resolution strategies: chaining (each bucket holds a linked list of entries) and open addressing (probe for the next empty slot). Good hash functions minimize collisions.",
+    "label": "Algorithms",
+    "type": "interview",
+    "difficulty": "medium"
+  },
+  {
+    "question": "What is the difference between a stack and a queue?",
+    "answer": "A stack follows LIFO (Last In, First Out) - the last element added is the first removed. Think of a stack of plates. Operations: push and pop. A queue follows FIFO (First In, First Out) - the first element added is the first removed. Think of a line at a store. Operations: enqueue and dequeue. Both have O(1) insertion and removal.",
+    "label": "Algorithms",
+    "type": "interview",
+    "difficulty": "easy"
+  },
+  {
+    "question": "What is a linked list and how does it differ from an array?",
+    "answer": "A linked list stores elements as nodes where each node contains data and a pointer to the next node. Unlike arrays, linked lists do not need contiguous memory, so insertion and deletion at any position is O(1) if you have a reference to the node. However, random access is O(n) because you must traverse from the head. Arrays offer O(1) random access but O(n) insertion.",
+    "label": "Algorithms",
+    "type": "interview",
+    "difficulty": "easy"
+  },
+  {
+    "question": "What is a binary tree and a binary search tree (BST)?",
+    "answer": "A binary tree is a tree where each node has at most two children. A binary search tree adds an ordering constraint: left child values are less than the parent, and right child values are greater. This enables O(log n) search, insert, and delete in a balanced BST. If unbalanced (degenerate to a line), operations degrade to O(n). Self-balancing BSTs like AVL and red-black trees prevent this.",
+    "label": "Algorithms",
+    "type": "interview",
+    "difficulty": "medium"
+  },
+  {
+    "question": "What is recursion and what are its risks?",
+    "answer": "Recursion is when a function calls itself with a smaller subproblem until reaching a base case. Classic examples: factorial, Fibonacci, tree traversal. Risks include stack overflow from too many recursive calls and redundant computation (exponential time without memoization). Always ensure a base case to prevent infinite recursion. Iterative solutions or tail recursion can mitigate stack overflow.",
+    "label": "Algorithms",
+    "type": "interview",
+    "difficulty": "easy"
+  },
+  {
+    "question": "What are the basic graph traversal algorithms?",
+    "answer": "BFS (Breadth-First Search) explores all neighbors at the current depth before moving deeper, using a queue. It finds the shortest path in unweighted graphs. DFS (Depth-First Search) explores as far as possible along each branch before backtracking, using a stack or recursion. Both have O(V+E) time complexity where V is vertices and E is edges.",
+    "label": "Algorithms",
+    "type": "interview",
+    "difficulty": "medium"
+  },
+  {
+    "question": "What is the difference between time complexity and space complexity?",
+    "answer": "Time complexity measures how the running time of an algorithm grows with input size. Space complexity measures how the memory usage grows with input size. An algorithm can be fast but use lots of memory, or vice versa. For example, merge sort is O(n log n) time but O(n) space, while insertion sort is O(n^2) time but O(1) space. Often there is a time-space tradeoff.",
+    "label": "Algorithms",
+    "type": "interview",
+    "difficulty": "easy"
+  },
+  {
+    "question": "What is dynamic programming?",
+    "answer": "Dynamic programming solves complex problems by breaking them into overlapping subproblems and storing their solutions to avoid redundant computation. It can be implemented top-down (memoization - recursion with caching) or bottom-up (tabulation - iterative, filling a table). Classic examples include Fibonacci, knapsack, and longest common subsequence. It turns exponential solutions into polynomial ones.",
+    "label": "Algorithms",
+    "type": "interview",
+    "difficulty": "medium"
+  },
+  {
+    "question": "What are the SOLID principles?",
+    "answer": "SOLID is five design principles for maintainable code. S - Single Responsibility: a class has one reason to change. O - Open/Closed: open for extension, closed for modification. L - Liskov Substitution: subtypes must be substitutable for their base types. I - Interface Segregation: prefer small, specific interfaces. D - Dependency Inversion: depend on abstractions, not concretions.",
+    "label": "Code Patterns",
+    "type": "interview",
+    "difficulty": "medium"
+  },
+  {
+    "question": "What is the DRY principle?",
+    "answer": "DRY (Don't Repeat Yourself) means every piece of knowledge should have a single, unambiguous representation in a system. If you find yourself copying and pasting code, extract it into a function, class, or module. DRY reduces bugs (fix once, not everywhere), improves maintainability, and keeps code concise. However, premature DRY can lead to wrong abstractions - prefer duplication over the wrong abstraction.",
+    "label": "Code Patterns",
+    "type": "interview",
+    "difficulty": "easy"
+  },
+  {
+    "question": "What is the KISS principle?",
+    "answer": "KISS (Keep It Simple, Stupid) means solutions should be as simple as possible. Avoid over-engineering, unnecessary abstractions, and premature optimization. Simpler code is easier to understand, debug, test, and maintain. Choose the straightforward approach unless complexity is truly required. As the saying goes, the best code is no code at all.",
+    "label": "Code Patterns",
+    "type": "interview",
+    "difficulty": "easy"
+  },
+  {
+    "question": "What is the Singleton pattern?",
+    "answer": "The Singleton pattern ensures a class has only one instance and provides a global point of access to it. It is useful for shared resources like database connections, configuration objects, or logging. Implementation typically involves a private constructor and a static method that returns the single instance. Overuse is considered an anti-pattern since it introduces global state and hinders testability.",
+    "label": "Code Patterns",
+    "type": "interview",
+    "difficulty": "easy"
+  },
+  {
+    "question": "What is the Factory pattern?",
+    "answer": "The Factory pattern provides an interface for creating objects without specifying their exact class. A factory method takes parameters and returns instances of different classes that share a common interface. This decouples the creation logic from the consuming code, making it easier to add new types without changing existing code. For example, a PaymentFactory returning Stripe or PayPal processors.",
+    "label": "Code Patterns",
+    "type": "interview",
+    "difficulty": "medium"
+  },
+  {
+    "question": "What is the Observer pattern?",
+    "answer": "The Observer pattern defines a one-to-many dependency where when one object (the subject) changes state, all its dependents (observers) are notified automatically. This decouples the subject from its observers. Common examples include event systems, pub/sub messaging, and UI frameworks where UI components update when data changes. It promotes loose coupling.",
+    "label": "Code Patterns",
+    "type": "interview",
+    "difficulty": "medium"
+  },
+  {
+    "question": "What is the Strategy pattern?",
+    "answer": "The Strategy pattern defines a family of algorithms, encapsulates each one, and makes them interchangeable. The algorithm can be selected at runtime without changing the client code. For example, a sorting function that accepts different comparison strategies, or a payment system that switches between different payment methods. It eliminates large conditional statements.",
+    "label": "Code Patterns",
+    "type": "interview",
+    "difficulty": "medium"
+  },
+  {
+    "question": "What is dependency injection?",
+    "answer": "Dependency injection is a technique where an object receives its dependencies from external code rather than creating them internally. Dependencies are passed through constructors, setters, or interfaces. This makes code more testable (you can inject mocks), loosely coupled (components do not know concrete implementations), and easier to maintain. DI frameworks like Spring automate this process.",
+    "label": "Code Patterns",
+    "type": "interview",
+    "difficulty": "medium"
+  },
+  {
+    "question": "What is the MVC pattern?",
+    "answer": "MVC (Model-View-Controller) separates an application into three components. Model manages data and business logic. View handles the display/UI. Controller processes user input and updates the Model and View. This separation of concerns makes applications easier to develop, test, and maintain. Variants include MVP (Model-View-Presenter) and MVVM (Model-View-ViewModel).",
+    "label": "Code Patterns",
+    "type": "interview",
+    "difficulty": "easy"
+  },
+  {
+    "question": "What is the difference between unit tests, integration tests, and end-to-end tests?",
+    "answer": "Unit tests test individual functions or methods in isolation, are fast, and should be numerous. Integration tests verify that multiple components work together correctly (e.g., API with database). End-to-end tests validate the entire application flow from the user's perspective. The testing pyramid suggests many unit tests, fewer integration tests, and even fewer E2E tests.",
+    "label": "Code Patterns",
+    "type": "interview",
+    "difficulty": "easy"
+  },
+  {
+    "question": "What is mocking in testing and when should you use it?",
+    "answer": "Mocking replaces real dependencies with controlled fake objects in tests. Mocks simulate the behavior of external services, databases, or APIs so you can test your code in isolation without side effects. Use mocks for unit tests to avoid slow or unreliable external calls. But do not mock everything - integration tests should use real dependencies to catch interface mismatches.",
+    "label": "Code Patterns",
+    "type": "interview",
+    "difficulty": "medium"
+  },
+  {
+    "question": "What is clean code and what are some key practices?",
+    "answer": "Clean code is readable, maintainable, and easy to understand. Key practices: use meaningful variable and function names, keep functions short and focused on one task, avoid deep nesting, write self-documenting code instead of excessive comments, follow consistent formatting, handle errors properly, and write tests. As Robert Martin says, code is read far more often than it is written.",
+    "label": "Code Patterns",
+    "type": "interview",
+    "difficulty": "easy"
+  },
+  {
+    "question": "What is AWS EC2?",
+    "answer": "EC2 (Elastic Compute Cloud) provides resizable virtual servers (instances) in the cloud. You choose an AMI (Amazon Machine Image) for the OS, instance type for CPU/memory (t3.micro, m5.large, etc.), and configure storage, networking, and security groups. EC2 supports on-demand, reserved (1-3 year commitment for discounts), and spot (unused capacity at discount) pricing.",
+    "label": "AWS",
+    "type": "interview",
+    "difficulty": "easy"
+  },
+  {
+    "question": "What is AWS S3 and what are its storage classes?",
+    "answer": "S3 (Simple Storage Service) is object storage for virtually unlimited data. Objects are stored in buckets with unique keys. Storage classes include: Standard (frequently accessed), Intelligent-Tiering (auto-moves between tiers), Standard-IA (infrequent access), Glacier (archive, minutes to hours retrieval), and Glacier Deep Archive (lowest cost, 12-48 hour retrieval). S3 provides 99.999999999% durability.",
+    "label": "AWS",
+    "type": "interview",
+    "difficulty": "easy"
+  },
+  {
+    "question": "What is AWS IAM and what are its main components?",
+    "answer": "IAM (Identity and Access Management) controls who can access AWS resources. Key components: Users (individual identities), Groups (collections of users), Roles (temporary credentials for services/users), and Policies (JSON documents defining permissions). Follow the principle of least privilege. IAM policies use Effect (Allow/Deny), Action (API calls), and Resource (ARN of the resource).",
+    "label": "AWS",
+    "type": "interview",
+    "difficulty": "easy"
+  },
+  {
+    "question": "What is a VPC in AWS?",
+    "answer": "A VPC (Virtual Private Cloud) is a logically isolated virtual network in AWS. You define the IP range (CIDR block), create subnets (public and private), configure route tables, and control access with security groups and NACLs. Public subnets have routes to an Internet Gateway. Private subnets use a NAT Gateway for outbound internet access. VPCs provide network-level isolation.",
+    "label": "AWS",
+    "type": "interview",
+    "difficulty": "medium"
+  },
+  {
+    "question": "What is AWS EKS?",
+    "answer": "EKS (Elastic Kubernetes Service) is AWS's managed Kubernetes service. AWS manages the control plane (API server, etcd, scheduler) with high availability across multiple AZs. You manage worker nodes (EC2 instances or Fargate for serverless). EKS integrates with AWS services: IAM for auth, ELB for load balancing, EBS/EFS for storage, and CloudWatch for monitoring.",
+    "label": "AWS",
+    "type": "interview",
+    "difficulty": "medium"
+  },
+  {
+    "question": "What is AWS Lambda?",
+    "answer": "Lambda is a serverless compute service that runs code in response to events without managing servers. You upload code, define triggers (API Gateway, S3 events, SQS messages), and AWS handles scaling automatically. You pay only for compute time used (per millisecond). Lambda supports multiple runtimes (Python, Node.js, Go, Java). Functions have a 15-minute maximum execution time.",
+    "label": "AWS",
+    "type": "interview",
+    "difficulty": "easy"
+  },
+  {
+    "question": "What is the difference between AWS RDS and DynamoDB?",
+    "answer": "RDS (Relational Database Service) is managed relational databases (PostgreSQL, MySQL, MariaDB, Oracle, SQL Server) with SQL queries, ACID transactions, and complex joins. DynamoDB is a managed NoSQL key-value/document database with single-digit millisecond performance at any scale. Use RDS for structured data with complex relationships, DynamoDB for high-throughput simple access patterns.",
+    "label": "AWS",
+    "type": "interview",
+    "difficulty": "medium"
+  },
+  {
+    "question": "What is AWS CloudFormation?",
+    "answer": "CloudFormation is an Infrastructure as Code (IaC) service that lets you define AWS resources in JSON or YAML templates. You create a stack from a template, and CloudFormation provisions and configures all resources in the correct order. It supports updates, rollbacks, and drift detection. Similar to Terraform but AWS-specific. Change sets let you preview changes before applying.",
+    "label": "AWS",
+    "type": "interview",
+    "difficulty": "medium"
+  },
+  {
+    "question": "What is the difference between a security group and a NACL in AWS?",
+    "answer": "Security groups are stateful firewalls at the instance level - if you allow inbound traffic, the response is automatically allowed. NACLs (Network Access Control Lists) are stateless firewalls at the subnet level - you must explicitly allow both inbound and outbound. Security groups only have allow rules, NACLs have both allow and deny rules. Security groups are evaluated before NACLs.",
+    "label": "AWS",
+    "type": "interview",
+    "difficulty": "medium"
+  },
+  {
+    "question": "What is AWS Route 53?",
+    "answer": "Route 53 is AWS's DNS service. It provides domain registration, DNS routing, and health checking. Routing policies include: Simple (single resource), Weighted (distribute traffic by percentage), Latency-based (route to lowest-latency region), Failover (active-passive), Geolocation (route by user location), and Multi-value (return multiple healthy IPs). It supports both public and private hosted zones.",
+    "label": "AWS",
+    "type": "interview",
+    "difficulty": "medium"
+  },
+  {
+    "question": "What is the difference between ALB and NLB in AWS?",
+    "answer": "ALB (Application Load Balancer) operates at Layer 7 (HTTP/HTTPS) and supports path-based routing, host-based routing, and WebSockets. NLB (Network Load Balancer) operates at Layer 4 (TCP/UDP) and handles millions of requests per second with ultra-low latency. Use ALB for web applications with content-based routing, NLB for TCP/UDP traffic requiring extreme performance or static IPs.",
+    "label": "AWS",
+    "type": "interview",
+    "difficulty": "medium"
+  },
+  {
+    "question": "What are AWS availability zones and regions?",
+    "answer": "A Region is a geographic area (us-east-1, eu-west-1) containing multiple Availability Zones. An AZ is one or more discrete data centers with independent power, cooling, and networking. AZs within a region are connected via low-latency links. Deploy across multiple AZs for high availability and across multiple regions for disaster recovery. Most AWS services are regional.",
+    "label": "AWS",
+    "type": "interview",
+    "difficulty": "easy"
+  },
+  {
+    "question": "What is the difference between CI and CD?",
+    "answer": "CI (Continuous Integration) is the practice of frequently merging code changes into a shared repository and automatically running builds and tests. CD can mean Continuous Delivery (code is always in a deployable state, but deployment is manual) or Continuous Deployment (every change that passes tests is automatically deployed to production). CI catches bugs early, CD reduces time to market.",
+    "label": "CI/CD",
+    "type": "interview",
+    "difficulty": "easy"
+  },
+  {
+    "question": "What are the typical stages in a CI/CD pipeline?",
+    "answer": "A typical pipeline includes: (1) Source - triggered by a code commit. (2) Build - compile code, build artifacts/images. (3) Test - run unit, integration, and security tests. (4) Static analysis - linting, code quality, vulnerability scanning. (5) Deploy to staging - deploy to a non-production environment. (6) Acceptance tests - validate in staging. (7) Deploy to production. (8) Post-deploy verification.",
+    "label": "CI/CD",
+    "type": "interview",
+    "difficulty": "easy"
+  },
+  {
+    "question": "What is a GitHub Actions workflow?",
+    "answer": "A GitHub Actions workflow is a YAML file in .github/workflows/ that defines automated processes. It consists of triggers (on push, PR, schedule), jobs (groups of steps that run on a runner), and steps (individual actions or shell commands). Jobs run in parallel by default but can have dependencies. Actions are reusable units published on the GitHub Marketplace.",
+    "label": "CI/CD",
+    "type": "interview",
+    "difficulty": "easy"
+  },
+  {
+    "question": "What is the difference between blue-green and canary deployments?",
+    "answer": "Blue-green maintains two identical environments: blue (current) and green (new). Traffic is switched all at once from blue to green, with easy rollback by switching back. Canary gradually routes a small percentage of traffic to the new version (e.g., 5%), monitors for errors, then increases traffic over time. Canary is less risky but more complex to implement.",
+    "label": "CI/CD",
+    "type": "interview",
+    "difficulty": "medium"
+  },
+  {
+    "question": "What is a rolling deployment?",
+    "answer": "A rolling deployment gradually replaces instances of the old version with the new version, one (or a few) at a time. At any point, both versions are running simultaneously. In Kubernetes, Deployments perform rolling updates by default, controlled by maxSurge and maxUnavailable settings. It is simpler than blue-green but does not support instant rollback of all instances.",
+    "label": "CI/CD",
+    "type": "interview",
+    "difficulty": "medium"
+  },
+  {
+    "question": "What is GitOps?",
+    "answer": "GitOps uses Git as the single source of truth for infrastructure and application configuration. Changes are made through pull requests, and an operator (like ArgoCD or Flux) continuously reconciles the live state with the desired state in Git. Benefits: full audit trail, easy rollback (git revert), declarative configuration, and consistent deployments. Pull-based model is more secure than push-based CI/CD.",
+    "label": "CI/CD",
+    "type": "interview",
+    "difficulty": "medium"
+  },
+  {
+    "question": "What is Jenkins and how does it work?",
+    "answer": "Jenkins is an open-source automation server for CI/CD. It uses pipelines defined in Jenkinsfiles (Groovy-based DSL) with stages for build, test, and deploy. Jenkins supports a vast plugin ecosystem for integrating with tools and services. It can run on a master-agent architecture where agents execute jobs. While powerful, it requires significant maintenance compared to managed solutions.",
+    "label": "CI/CD",
+    "type": "interview",
+    "difficulty": "easy"
+  },
+  {
+    "question": "What is artifact management in CI/CD?",
+    "answer": "Artifact management involves storing, versioning, and distributing build outputs (artifacts) like compiled binaries, Docker images, or packages. Tools include Nexus, Artifactory, and cloud registries (ECR, GCR). Good practices: version every artifact, make builds reproducible, use immutable tags, scan artifacts for vulnerabilities, and clean up old artifacts to save storage.",
+    "label": "CI/CD",
+    "type": "interview",
+    "difficulty": "medium"
+  },
+  {
+    "question": "What are branch protection rules and why are they important?",
+    "answer": "Branch protection rules enforce quality gates on important branches like main. Common rules include: requiring pull request reviews, requiring status checks (CI passing) before merging, requiring signed commits, preventing force pushes, and requiring linear history. They prevent direct pushes to production branches and ensure all changes go through review and testing.",
+    "label": "CI/CD",
+    "type": "interview",
+    "difficulty": "easy"
+  },
+  {
+    "question": "What is Prometheus and how does it work?",
+    "answer": "Prometheus is an open-source monitoring system that collects metrics by scraping HTTP endpoints at configured intervals. It stores time-series data identified by metric name and key-value labels. It has a powerful query language (PromQL) for aggregating and analyzing metrics. Prometheus uses a pull model, integrates with Alertmanager for notifications, and is the standard for Kubernetes monitoring.",
+    "label": "Monitoring",
+    "type": "interview",
+    "difficulty": "easy"
+  },
+  {
+    "question": "What are the four Prometheus metric types?",
+    "answer": "Counter: a cumulative value that only goes up (e.g., total HTTP requests). Gauge: a value that can go up and down (e.g., current memory usage, temperature). Histogram: samples observations and counts them in configurable buckets (e.g., request duration distribution). Summary: similar to histogram but calculates quantiles on the client side. Counters and gauges are the most common.",
+    "label": "Monitoring",
+    "type": "interview",
+    "difficulty": "medium"
+  },
+  {
+    "question": "What is Grafana and how does it relate to Prometheus?",
+    "answer": "Grafana is an open-source visualization and dashboarding platform. It connects to data sources like Prometheus, Elasticsearch, InfluxDB, and many others. You create dashboards with panels that display metrics as graphs, gauges, tables, and heatmaps using queries (PromQL for Prometheus). Grafana also supports alerting and annotations. It is the standard visualization layer for Prometheus.",
+    "label": "Monitoring",
+    "type": "interview",
+    "difficulty": "easy"
+  },
+  {
+    "question": "What is the difference between SLI, SLO, and SLA?",
+    "answer": "SLI (Service Level Indicator) is a metric that measures service quality, like request latency or error rate. SLO (Service Level Objective) is a target value for an SLI, like '99.9% of requests under 200ms'. SLA (Service Level Agreement) is a contract with consequences if SLOs are not met, like credits or refunds. SLIs inform SLOs, which underpin SLAs.",
+    "label": "Monitoring",
+    "type": "interview",
+    "difficulty": "medium"
+  },
+  {
+    "question": "What is the ELK/EFK stack?",
+    "answer": "ELK is Elasticsearch (search and analytics engine), Logstash (log processing pipeline), and Kibana (visualization). EFK replaces Logstash with Fluentd or Fluent Bit (lighter log collectors popular in Kubernetes). Logs are collected by Fluentd/Logstash, stored in Elasticsearch, and queried/visualized in Kibana. This stack provides centralized logging for distributed systems.",
+    "label": "Monitoring",
+    "type": "interview",
+    "difficulty": "medium"
+  },
+  {
+    "question": "What is alerting and what makes a good alert?",
+    "answer": "Alerting notifies teams when systems need attention, typically triggered by metric thresholds. Good alerts are: actionable (someone needs to do something), urgent (cannot wait), relevant (not noise), and include context (what is wrong, impact, and where to look). Avoid alert fatigue by reducing false positives, using severity levels, and alerting on symptoms (high error rate) rather than causes (CPU usage).",
+    "label": "Monitoring",
+    "type": "interview",
+    "difficulty": "medium"
+  },
+  {
+    "question": "What is log aggregation and why is it important?",
+    "answer": "Log aggregation collects logs from multiple sources (applications, containers, servers) into a centralized system for searching and analysis. In distributed systems, a single request may touch dozens of services, making it impossible to debug by SSHing into individual hosts. Centralized logging enables correlation across services, faster troubleshooting, and long-term storage for compliance.",
+    "label": "Monitoring",
+    "type": "interview",
+    "difficulty": "easy"
+  },
+  {
+    "question": "What is the difference between monitoring and observability?",
+    "answer": "Monitoring is tracking predefined metrics and alerting on known failure modes. Observability is the ability to understand a system's internal state from its external outputs (metrics, logs, traces). Monitoring tells you WHEN something is wrong, observability helps you understand WHY. The three pillars of observability are metrics, logs, and distributed traces.",
+    "label": "Monitoring",
+    "type": "interview",
+    "difficulty": "medium"
+  },
+  {
+    "question": "What is distributed tracing?",
+    "answer": "Distributed tracing tracks a request as it flows through multiple microservices, recording timing and metadata at each step. Each request gets a unique trace ID propagated across services. Tools like Jaeger, Zipkin, and OpenTelemetry collect and visualize traces as waterfall diagrams showing latency at each service. This helps identify bottlenecks and failures in distributed architectures.",
+    "label": "Monitoring",
+    "type": "interview",
+    "difficulty": "medium"
+  },
+  {
+    "question": "What are some key metrics to monitor for a web application?",
+    "answer": "The RED method covers rate (requests per second), errors (failed request count or percentage), and duration (latency/response time). Also monitor: CPU and memory usage, disk I/O, network throughput, connection pool utilization, queue depth, and saturation. For Kubernetes, track pod restarts, pending pods, and node resource utilization. The USE method (Utilization, Saturation, Errors) covers infrastructure.",
+    "label": "Monitoring",
+    "type": "interview",
+    "difficulty": "medium"
+  },
+  {
+    "question": "What is a SQL JOIN and what are the common types?",
+    "answer": "A JOIN combines rows from two or more tables based on a related column. INNER JOIN returns only matching rows from both tables. LEFT JOIN returns all rows from the left table and matching rows from the right (NULL if no match). RIGHT JOIN is the opposite. FULL OUTER JOIN returns all rows from both tables. Cross join returns the Cartesian product of both tables.",
+    "label": "Databases",
+    "type": "interview",
+    "difficulty": "easy"
+  },
+  {
+    "question": "What are ACID properties in databases?",
+    "answer": "ACID ensures reliable transactions. Atomicity: a transaction either completes fully or not at all. Consistency: the database moves from one valid state to another. Isolation: concurrent transactions do not interfere with each other. Durability: committed data survives system failures. ACID is fundamental to relational databases and is what distinguishes them from many NoSQL databases.",
+    "label": "Databases",
+    "type": "interview",
+    "difficulty": "medium"
+  },
+  {
+    "question": "What is database normalization and why is it important?",
+    "answer": "Normalization organizes tables to reduce data redundancy and prevent anomalies. First Normal Form (1NF) eliminates repeating groups. Second Normal Form (2NF) removes partial dependencies. Third Normal Form (3NF) removes transitive dependencies. Normalization prevents update anomalies, saves storage, and maintains data integrity. Sometimes denormalization is used intentionally for read performance.",
+    "label": "Databases",
+    "type": "interview",
+    "difficulty": "medium"
+  },
+  {
+    "question": "What is a database index and how does it improve performance?",
+    "answer": "An index is a data structure (usually a B-tree) that speeds up data retrieval by allowing the database to find rows without scanning the entire table. Like a book index, it maps values to row locations. Create indexes on columns used in WHERE, JOIN, and ORDER BY clauses. Indexes speed up reads but slow down writes (the index must be updated). Use EXPLAIN to verify index usage.",
+    "label": "Databases",
+    "type": "interview",
+    "difficulty": "easy"
+  },
+  {
+    "question": "What is the difference between SQL and NoSQL databases?",
+    "answer": "SQL databases are relational, use structured schemas with tables and rows, support complex queries and JOINs, and provide ACID guarantees. NoSQL databases include document stores (MongoDB), key-value (Redis, DynamoDB), column-family (Cassandra), and graph databases (Neo4j). NoSQL is more flexible, scales horizontally more easily, but typically trades consistency for availability and partition tolerance (CAP theorem).",
+    "label": "Databases",
+    "type": "interview",
+    "difficulty": "easy"
+  },
+  {
+    "question": "What is database replication?",
+    "answer": "Replication copies data from one database server (primary/master) to one or more replicas (secondaries/slaves). Synchronous replication waits for confirmation from replicas (stronger consistency). Asynchronous replication does not wait (better performance, risk of data loss). Replication provides high availability (failover to replica), read scaling (distribute read queries), and geographic distribution.",
+    "label": "Databases",
+    "type": "interview",
+    "difficulty": "medium"
+  },
+  {
+    "question": "What is database sharding?",
+    "answer": "Sharding horizontally partitions data across multiple database instances. Each shard holds a subset of the data based on a shard key (e.g., user ID ranges or hash). Sharding enables horizontal scaling beyond a single server's capacity. Challenges include cross-shard queries, rebalancing data when adding shards, and choosing a good shard key to avoid hotspots.",
+    "label": "Databases",
+    "type": "interview",
+    "difficulty": "medium"
+  },
+  {
+    "question": "What is connection pooling and why is it important?",
+    "answer": "Connection pooling maintains a cache of reusable database connections instead of creating a new connection for each request. Creating connections is expensive (TCP handshake, authentication, memory allocation). A pool pre-creates connections, lends them to requests, and returns them when done. Tools like PgBouncer (PostgreSQL) or HikariCP (Java) manage pools. This dramatically reduces latency and resource usage.",
+    "label": "Databases",
+    "type": "interview",
+    "difficulty": "medium"
+  },
+  {
+    "question": "What are some basic SQL query optimization techniques?",
+    "answer": "Use EXPLAIN/EXPLAIN ANALYZE to understand query plans. Create indexes on columns used in WHERE, JOIN, and ORDER BY. Avoid SELECT * (select only needed columns). Use LIMIT for large result sets. Avoid functions on indexed columns in WHERE clauses (prevents index use). Use JOINs instead of subqueries when possible. Avoid N+1 queries by using eager loading or batch fetching.",
+    "label": "Databases",
+    "type": "interview",
+    "difficulty": "medium"
+  },
+  {
+    "question": "What is PostgreSQL and what makes it different from MySQL?",
+    "answer": "PostgreSQL is an advanced open-source relational database known for standards compliance, extensibility, and feature richness. Compared to MySQL, PostgreSQL has better support for complex queries, JSON/JSONB, full-text search, custom types, window functions, CTEs, and concurrency (MVCC). MySQL is often simpler to set up and can be faster for simple read-heavy workloads.",
+    "label": "Databases",
+    "type": "interview",
+    "difficulty": "easy"
+  },
+  {
+    "question": "What are database transactions and isolation levels?",
+    "answer": "A transaction groups multiple operations into an atomic unit that either all succeed (COMMIT) or all fail (ROLLBACK). Isolation levels control visibility of concurrent changes: Read Uncommitted (dirty reads possible), Read Committed (default in PostgreSQL, no dirty reads), Repeatable Read (consistent reads within transaction), and Serializable (full isolation, as if sequential execution). Higher isolation means lower concurrency.",
+    "label": "Databases",
+    "type": "interview",
+    "difficulty": "medium"
+  }
+]
