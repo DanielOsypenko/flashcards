@@ -1,0 +1,7 @@
+*-questions.json
+node_modules/
+test-results/
+.idea/
+.serena/
+package.json
+package-lock.json
