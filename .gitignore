@@ -5,3 +5,4 @@ test-results/
 .serena/
 package.json
 package-lock.json
+icon.svg

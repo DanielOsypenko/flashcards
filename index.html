@@ -4,6 +4,13 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Flashcards</title>
+  <meta name="theme-color" content="#2563eb" media="(prefers-color-scheme: light)">
+  <meta name="theme-color" content="#3b82f6" media="(prefers-color-scheme: dark)">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="default">
+  <meta name="apple-mobile-web-app-title" content="Flashcards">
+  <link rel="manifest" href="manifest.json">
+  <link rel="apple-touch-icon" href="icon-192.png">
   <style>
     :root {
       --bg: #f0f0f0;
@@ -1001,10 +1008,85 @@ var S = {
   microSize:     5,
   microQueue:    [],     // card IDs left in this micro-session
   microResults:  [],     // {id, level} for each answered card
-  microTotal:    0       // size chosen when session started
+  microTotal:    0,      // size chosen when session started
+  _gistDirty:   false   // true when localStorage has changes not yet synced to Gist
 };
 
 var stats = JSON.parse(localStorage.getItem('fc_stats') || '[]');
+
+// ── Offline card cache ────────────────────────────────────────────────────────
+
+function cacheCardsLocally() {
+  try {
+    localStorage.setItem('fc_cards', JSON.stringify(S.cards));
+  } catch(e) {}
+}
+
+function loadCachedCards() {
+  try {
+    var raw = localStorage.getItem('fc_cards');
+    if (raw) return JSON.parse(raw);
+  } catch(e) {}
+  return null;
+}
+
+function setDirty(dirty) {
+  S._gistDirty = dirty;
+  if (dirty) localStorage.setItem('fc_dirty', '1');
+  else localStorage.removeItem('fc_dirty');
+  updateOnlineIndicator();
+}
+
+function isDirty() {
+  return localStorage.getItem('fc_dirty') === '1';
+}
+
+function syncPendingChanges() {
+  if (!isDirty() || !navigator.onLine) return;
+  if (!S.token || !S.gistId) return;
+  saveGist().then(function() {
+    setDirty(false);
+  }).catch(function() {});
+}
+
+function mergeCards(localCards, remoteCards) {
+  var remoteById = {};
+  remoteCards.forEach(function(c) { remoteById[c.id] = c; });
+  var merged = [], seenIds = {};
+  localCards.forEach(function(c) {
+    seenIds[c.id] = true;
+    if (remoteById[c.id]) {
+      var m = {};
+      var remote = remoteById[c.id];
+      for (var k in remote) m[k] = remote[k];
+      m.known = c.known;
+      m.unknown = c.unknown;
+      if (c.bookmarked !== undefined) m.bookmarked = c.bookmarked;
+      merged.push(m);
+    } else {
+      merged.push(c);
+    }
+  });
+  remoteCards.forEach(function(c) {
+    if (!seenIds[c.id]) merged.push(c);
+  });
+  return merged;
+}
+
+function updateOnlineIndicator() {
+  var el = document.getElementById('saving-lbl');
+  if (!el) return;
+  if (!navigator.onLine && S.token) {
+    el.textContent = 'Offline' + (isDirty() ? ' (changes pending)' : '');
+    el.style.color = '#f59e0b';
+  } else if (S.saving) {
+    el.textContent = 'Saving…';
+    el.style.color = '';
+  } else {
+    el.textContent = '';
+    el.style.color = '';
+  }
+}
 
 // ── Gist API ─────────────────────────────────────────────────────────────────
 
@@ -1033,6 +1115,7 @@ function saveGistRequest() {
   }).then(function(r) {
     if (!r.ok) throw new Error('Sync error ' + r.status);
     S.saving = false;
+    setDirty(false);
     renderSaving();
   });
 }
@@ -1048,7 +1131,17 @@ function showSaveError(msg) {
 }
 
 function saveGist() {
+  // Always cache locally first — offline safety net
+  cacheCardsLocally();
+  localStorage.setItem('fc_stats', JSON.stringify(stats));
+  setDirty(true);
+
   if (!S.token || !S.gistId) return Promise.resolve();
+  if (!navigator.onLine) {
+    S.saving = false;
+    updateOnlineIndicator();
+    return Promise.resolve();
+  }
   S.saving = true; renderSaving();
   return saveGistRequest().catch(function() {
     return new Promise(function(res) { setTimeout(res, 3000); })
@@ -1064,18 +1157,38 @@ function scheduleSave() {
 }
 
 function loadGist() {
+  // Offline: load from localStorage cache
+  if (!navigator.onLine) {
+    var cached = loadCachedCards();
+    if (cached) { S.cards = cached; return Promise.resolve(); }
+    return Promise.reject(new Error('Offline and no cached data'));
+  }
+
   return fetch('https://api.github.com/gists/' + S.gistId, { headers: hdrs() })
     .then(function(r) { if (!r.ok) throw new Error('Load failed ' + r.status); return r.json(); })
     .then(function(d) {
       var f = d.files['flashcards.json'];
       if (f) {
         var data = JSON.parse(f.content);
-        S.cards = data.cards || [];
+        if (isDirty()) {
+          var cachedCards = loadCachedCards();
+          S.cards = cachedCards ? mergeCards(cachedCards, data.cards || []) : (data.cards || []);
+        } else {
+          S.cards = data.cards || [];
+        }
         if (Array.isArray(data.stats)) {
           stats = mergeStats(stats, data.stats);
           localStorage.setItem('fc_stats', JSON.stringify(stats));
         }
       }
+      cacheCardsLocally();
+      if (isDirty()) syncPendingChanges();
+      else setDirty(false);
+    })
+    .catch(function(err) {
+      var cached = loadCachedCards();
+      if (cached) { S.cards = cached; return; }
+      throw err;
     });
 }
 
@@ -2492,6 +2605,8 @@ function resetToken() {
   localStorage.removeItem('fc_token');
   localStorage.removeItem('fc_gist_id');
   localStorage.removeItem('fc_appMode');
+  localStorage.removeItem('fc_cards');
+  localStorage.removeItem('fc_dirty');
   render(); updateNav();
 }
 
@@ -2705,9 +2820,30 @@ function initPullToRefresh() {
   }, { passive: true });
 }
 
+// ── Online/offline handling ────────────────────────────────────────────────────
+
+window.addEventListener('online', function() {
+  updateOnlineIndicator();
+  syncPendingChanges();
+});
+
+window.addEventListener('offline', function() {
+  updateOnlineIndicator();
+});
+
 // ── Init ──────────────────────────────────────────────────────────────────────
 
 (function() {
+  // Register service worker for PWA/offline support
+  if ('serviceWorker' in navigator) {
+    navigator.serviceWorker.register('sw.js').catch(function(err) {
+      console.warn('SW registration failed:', err);
+    });
+  }
+
+  // Restore dirty flag from previous session
+  S._gistDirty = isDirty();
+
   updateNav();
   initSwipe();
   initPullToRefresh();
