@@ -1,0 +1,194 @@
+[
+  {
+    "question": "You have a Single Node OpenShift (SNO) cluster. What happens when you add a second node to it?",
+    "answer": "Adding a node to SNO adds a worker node only. It does NOT create a second control-plane node and does NOT make the cluster highly available. The original SNO node remains the sole API server, etcd member, and control-plane node. If it fails, the cluster is unavailable. This is a critical distinction for interviews.",
+    "label": "Deployment",
+    "type": "interview",
+    "difficulty": "medium",
+    "resource": "https://docs.openshift.com/container-platform/latest/installing/installing_sno/install-sno-installing-sno.html"
+  },
+  {
+    "question": "What are the general high-level steps to add a worker node to any OpenShift cluster, regardless of platform?",
+    "answer": "1) Prepare the new machine (CPU, RAM, disk, network, DNS, NTP). 2) Provision the infrastructure (physical server, VM, or cloud instance). 3) Install/boot RHCOS and supply the cluster's worker Ignition configuration. 4) The kubelet contacts the cluster and creates CSRs. 5) Approve pending CSRs (typically two: client cert and kubelet serving cert). 6) Confirm node becomes Ready. 7) Verify Machine Config Pool finishes updating. 8) Apply labels/taints if needed.",
+    "label": "Deployment",
+    "type": "interview",
+    "difficulty": "medium",
+    "resource": "https://docs.openshift.com/container-platform/latest/machine_management/user_infra/adding-compute-user-infra-general.html"
+  },
+  {
+    "question": "What commands would you use to verify a newly added worker node has joined the cluster successfully?",
+    "answer": "oc get nodes (check node is Ready), oc get csr (check for pending CSRs), oc get mcp (verify Machine Config Pool is updated and not degraded), oc get co (check all cluster operators are available). For IPI clusters also check: oc get machines -n openshift-machine-api.",
+    "label": "Deployment",
+    "type": "interview",
+    "difficulty": "easy",
+    "resource": "https://docs.openshift.com/container-platform/latest/support/troubleshooting/verifying-node-health.html"
+  },
+  {
+    "question": "How do you approve pending CSRs when adding a worker node manually?",
+    "answer": "Run 'oc get csr' to list pending certificate signing requests, then 'oc adm certificate approve <csr-name>' for each pending CSR. There are commonly two CSRs per node: the initial client certificate request and the kubelet serving certificate request. You can approve all pending at once with: oc get csr -o go-template='{{range .items}}{{if not .status}}{{.metadata.name}}{{\"\\n\"}}{{end}}{{end}}' | xargs oc adm certificate approve",
+    "label": "Deployment",
+    "type": "interview",
+    "difficulty": "easy",
+    "resource": "https://docs.openshift.com/container-platform/latest/machine_management/user_infra/adding-compute-user-infra-general.html"
+  },
+  {
+    "question": "How do you add a worker node to a bare-metal UPI OpenShift cluster?",
+    "answer": "1) Rack/allocate the physical server. 2) Configure firmware, boot order, disks, networking, DNS, and NTP. 3) Obtain the cluster's worker Ignition config. 4) Boot the server with an RHCOS ISO or PXE. 5) Use coreos-installer to install RHCOS with the worker Ignition: coreos-installer install /dev/<disk> --ignition-url=<worker-ignition-url>. 6) Reboot from installed disk. 7) Approve CSRs. 8) Verify node joins as Ready.",
+    "label": "Deployment",
+    "type": "interview",
+    "difficulty": "medium",
+    "resource": "https://docs.openshift.com/container-platform/latest/installing/installing_bare_metal/installing-bare-metal.html"
+  },
+  {
+    "question": "How do you add a worker node to a bare-metal IPI cluster that has Metal3 integration?",
+    "answer": "If the cluster has functioning Metal3/BMC integration: 1) Register the host as a BareMetalHost resource with BMC credentials. 2) Ensure the host shows as available for provisioning. 3) Scale an existing worker MachineSet: oc scale machineset <worker-machineset> -n openshift-machine-api --replicas=1. The Machine API handles provisioning via the provisioning network, PXE boots RHCOS, injects Ignition, and joins the node automatically.",
+    "label": "Deployment",
+    "type": "interview",
+    "difficulty": "hard",
+    "resource": "https://docs.openshift.com/container-platform/latest/installing/installing_bare_metal_ipi/ipi-install-expanding-the-cluster.html"
+  },
+  {
+    "question": "How do you add a worker to a cluster that was installed using the Assisted Installer?",
+    "answer": "1) Open the existing cluster in Red Hat Hybrid Cloud Console (console.redhat.com). 2) Select 'Add hosts'. 3) Generate a new discovery ISO with required networking settings. 4) Boot the additional server/VM from the discovery ISO. 5) Wait for host discovery and validation to complete. 6) Assign the worker role and click Install. 7) Verify the node joins in OpenShift. This can also be done via the Assisted Installer REST API.",
+    "label": "Deployment",
+    "type": "interview",
+    "difficulty": "medium",
+    "resource": "https://docs.openshift.com/container-platform/latest/installing/installing_on_prem_assisted/adding-hosts-on-prem-environment.html"
+  },
+  {
+    "question": "How do you add a worker node to a vSphere IPI cluster using the Machine API?",
+    "answer": "1) Check existing MachineSets: oc get machinesets -n openshift-machine-api. 2) Scale the relevant MachineSet: oc scale machineset <vsphere-worker-machineset> -n openshift-machine-api --replicas=1. The Machine API clones the VM template, configures CPU/memory/disk/network/datastore/resource pool, injects bootstrap data, powers on the VM, and joins it as a worker. 3) Verify with: oc get machines -n openshift-machine-api && oc get nodes && oc get mcp.",
+    "label": "Deployment",
+    "type": "interview",
+    "difficulty": "medium",
+    "resource": "https://docs.openshift.com/container-platform/latest/machine_management/creating_machinesets/creating-machineset-vsphere.html"
+  },
+  {
+    "question": "A cluster runs as VMs on vSphere but reports platform type as 'None'. Why, and how does this affect adding workers?",
+    "answer": "The cluster was installed without vSphere platform integration (UPI or platform:none). Running on vSphere hardware does not mean the cluster has vSphere IPI integration. Without it, there are no MachineSet objects and no Machine API automation. You must manually: clone an RHCOS VM template, configure CPU/RAM/disk/network/DNS/NTP, attach the worker Ignition config, power on the VM, approve CSRs, and verify the node. Check with: oc get infrastructure cluster -o jsonpath='{.status.platformStatus.type}'",
+    "label": "Deployment",
+    "type": "interview",
+    "difficulty": "hard",
+    "resource": "https://docs.openshift.com/container-platform/latest/machine_management/user_infra/adding-vsphere-compute-user-infra.html"
+  },
+  {
+    "question": "How do you add a worker node to an AWS IPI OpenShift cluster?",
+    "answer": "1) List existing MachineSets: oc get machinesets -n openshift-machine-api. 2) Scale the worker MachineSet: oc scale machineset <aws-worker-machineset> -n openshift-machine-api --replicas=1. The Machine API creates an EC2 instance with the correct AMI, instance type, AZ/subnet, security groups, IAM instance profile, root volume, tags, and user data. 3) Verify: oc get machines -n openshift-machine-api && oc get nodes. If no MachineSet exists, create one specifying infrastructure ID, AMI, region, subnet, security groups, and IAM profile.",
+    "label": "Deployment",
+    "type": "interview",
+    "difficulty": "medium",
+    "resource": "https://docs.openshift.com/container-platform/latest/machine_management/creating_machinesets/creating-machineset-aws.html"
+  },
+  {
+    "question": "How do you add a worker node to an AWS UPI OpenShift cluster?",
+    "answer": "1) Create an EC2 instance using the correct RHCOS AMI. 2) Place it in the cluster VPC and appropriate subnet. 3) Attach correct security groups and IAM instance profile. 4) Supply worker Ignition/bootstrap data through EC2 user data. 5) Ensure DNS resolves to the cluster API and machine-config server. 6) Start the instance. 7) Approve CSRs. 8) Verify it becomes a worker. Red Hat's UPI procedure uses CloudFormation templates where each stack represents one compute machine.",
+    "label": "Deployment",
+    "type": "interview",
+    "difficulty": "hard",
+    "resource": "https://docs.openshift.com/container-platform/latest/installing/installing_aws/installing-aws-user-infra.html"
+  },
+  {
+    "question": "Does the installation type (IPI, UPI, Assisted Installer, Agent-based) matter when adding nodes? How?",
+    "answer": "Yes, significantly. IPI: Machine API creates new machines automatically via MachineSet scaling. UPI: Administrator provisions infrastructure manually and supplies worker Ignition. Assisted Installer: Use the add-host discovery ISO workflow via Hybrid Cloud Console or API. Agent-based Installer: Primarily an install-time mechanism; post-install expansion is usually manual. platform:none: No cloud MachineSet automation; fully manual provisioning. The key diagnostic: oc get infrastructure cluster -o jsonpath='{.status.platformStatus.type}' and oc get machinesets -n openshift-machine-api.",
+    "label": "Deployment",
+    "type": "interview",
+    "difficulty": "hard",
+    "resource": "https://docs.openshift.com/container-platform/latest/installing/index.html"
+  },
+  {
+    "question": "How would you determine the installation type and platform of an existing OpenShift cluster?",
+    "answer": "Run: oc get infrastructure cluster -o jsonpath='{.status.platformStatus.type}' to get the platform type (AWS, VSphere, BareMetal, None, etc.). Then check: oc get machinesets -n openshift-machine-api to see if Machine API integration exists. If platform is 'None' and no MachineSets exist, it was likely installed as UPI or platform:none regardless of actual underlying infrastructure.",
+    "label": "Deployment",
+    "type": "interview",
+    "difficulty": "medium",
+    "resource": "https://docs.openshift.com/container-platform/latest/installing/index.html"
+  },
+  {
+    "question": "What is the role of the worker Ignition configuration when adding a node?",
+    "answer": "The worker Ignition config contains the initial machine configuration: certificates, systemd units, file contents, and the machine-config-server endpoint URL. When RHCOS boots with this Ignition, it configures the OS, starts the kubelet, and the kubelet contacts the cluster to register. The Ignition file is generated during cluster installation and can be retrieved from the cluster. For manual additions, you serve it via HTTP or embed it in the boot media. It is essentially the 'join token' equivalent for OpenShift.",
+    "label": "Deployment",
+    "type": "interview",
+    "difficulty": "medium",
+    "resource": "https://docs.openshift.com/container-platform/latest/installing/install_config/installing-customizing.html"
+  },
+  {
+    "question": "When would you create a new MachineSet instead of scaling an existing one?",
+    "answer": "Create a new MachineSet when the new worker needs different configuration than existing ones: different instance type/VM size, different availability zone or subnet, different datastore or resource pool (vSphere), different storage/disk configuration, different labels or taints for workload targeting, different failure domain for HA distribution. Each MachineSet is a template for identical machines, so divergent requirements need separate MachineSets.",
+    "label": "Deployment",
+    "type": "interview",
+    "difficulty": "medium",
+    "resource": "https://docs.openshift.com/container-platform/latest/machine_management/creating_machinesets/creating-machineset-aws.html"
+  },
+  {
+    "question": "What is the Machine Config Pool (MCP) and why should you check it after adding a node?",
+    "answer": "A Machine Config Pool groups nodes that share the same machine configuration (kernel arguments, files, systemd units, OS settings). The default pools are 'master' and 'worker'. After adding a node, check 'oc get mcp' to verify: the new node has been added to the worker pool, the pool is not degraded, the rendered config is up to date, and no nodes are stuck updating. A degraded MCP means the node may not have the correct OS-level configuration applied.",
+    "label": "Deployment",
+    "type": "interview",
+    "difficulty": "medium",
+    "resource": "https://docs.openshift.com/container-platform/latest/post_installation_configuration/machine-configuration-tasks.html"
+  },
+  {
+    "question": "What is Metal3 (Metal-Cubed) and how does it enable bare-metal IPI?",
+    "answer": "Metal3 is an open-source project that provides Kubernetes-native bare-metal host management. It uses the BareMetalHost custom resource to represent physical servers, connecting to their BMC (IPMI, Redfish, iDRAC, iLO) for power management and PXE provisioning. In OpenShift bare-metal IPI, Metal3 enables the Machine API to automatically provision physical servers the same way cloud providers provision VMs: power on via BMC, PXE boot RHCOS, inject Ignition, and join the cluster.",
+    "label": "Deployment",
+    "type": "interview",
+    "difficulty": "hard",
+    "resource": "https://metal3.io/"
+  },
+  {
+    "question": "What is a BareMetalHost resource and what information does it contain?",
+    "answer": "A BareMetalHost (BMH) is a Metal3 custom resource representing a physical server. It contains: BMC address and credentials (IPMI, Redfish, iDRAC URL), boot MAC address for PXE provisioning, hardware details (discovered after inspection), provisioning state (registering, inspecting, available, provisioning, provisioned), and consumer reference linking it to a Machine object. BMH resources live in the openshift-machine-api namespace. Check with: oc get baremetalhosts -n openshift-machine-api.",
+    "label": "Deployment",
+    "type": "interview",
+    "difficulty": "hard",
+    "resource": "https://docs.openshift.com/container-platform/latest/installing/installing_bare_metal_ipi/ipi-install-expanding-the-cluster.html"
+  },
+  {
+    "question": "What is coreos-installer and how is it used when adding bare-metal nodes?",
+    "answer": "coreos-installer is a tool for installing Red Hat Enterprise Linux CoreOS (RHCOS) to disk. When adding a bare-metal worker: boot from RHCOS live ISO/PXE, then run 'coreos-installer install /dev/<disk> --ignition-url=<worker-ignition-url>' to write RHCOS to the target disk with the worker Ignition config embedded. After reboot, the machine starts with the correct configuration and joins the cluster. The Ignition URL must be accessible from the machine's network.",
+    "label": "Deployment",
+    "type": "interview",
+    "difficulty": "medium",
+    "resource": "https://coreos.github.io/coreos-installer/"
+  },
+  {
+    "question": "Can you convert a Single Node OpenShift (SNO) into a full HA cluster by adding two more control-plane nodes?",
+    "answer": "No, not through a standard supported workflow. Adding nodes to SNO only adds worker nodes. The original SNO node remains the sole control-plane and etcd member. Converting SNO to a multi-control-plane HA cluster would require etcd membership changes and control-plane reconfiguration, which is not a supported operation. If you need HA, you should install a 3-node control-plane cluster from the start. SNO is designed for edge and single-site use cases where HA is not required.",
+    "label": "Deployment",
+    "type": "interview",
+    "difficulty": "hard",
+    "resource": "https://docs.openshift.com/container-platform/latest/installing/installing_sno/install-sno-installing-sno.html"
+  },
+  {
+    "question": "What is the difference between IPI and UPI installation in OpenShift?",
+    "answer": "IPI (Installer-Provisioned Infrastructure): The OpenShift installer creates and manages all infrastructure (VMs, networking, DNS, load balancers, storage). It sets up Machine API integration for day-2 scaling via MachineSets. UPI (User-Provisioned Infrastructure): The administrator creates all infrastructure manually or with their own automation (Terraform, CloudFormation, scripts). The installer only configures OpenShift on pre-existing machines. Often results in platform:none with no Machine API automation for scaling.",
+    "label": "Deployment",
+    "type": "interview",
+    "difficulty": "medium",
+    "resource": "https://docs.openshift.com/container-platform/latest/installing/index.html"
+  },
+  {
+    "question": "What is the Assisted Installer and when would you use it?",
+    "answer": "The Assisted Installer is a SaaS-based OpenShift installation tool hosted at console.redhat.com. It simplifies installation by: providing a discovery ISO that auto-detects hardware, validating host requirements before installation, handling network configuration, supporting connected and disconnected environments. Use it for: bare-metal installations without PXE infrastructure, SNO deployments, environments where you want guided installation, and when you need to add workers post-install via the 'Add hosts' workflow.",
+    "label": "Deployment",
+    "type": "interview",
+    "difficulty": "medium",
+    "resource": "https://docs.openshift.com/container-platform/latest/installing/installing_on_prem_assisted/installing-on-prem-assisted.html"
+  },
+  {
+    "question": "What is the Agent-based Installer and how does it differ from the Assisted Installer?",
+    "answer": "The Agent-based Installer generates a bootable ISO containing all configuration needed for installation, without requiring network access to a SaaS service. Unlike the Assisted Installer (hosted at console.redhat.com), it is fully self-contained and works in disconnected/air-gapped environments. It is primarily an installation-time mechanism. Post-install node expansion is typically handled manually or through other supported cluster management workflows, not through the agent-based installer itself.",
+    "label": "Deployment",
+    "type": "interview",
+    "difficulty": "hard",
+    "resource": "https://docs.openshift.com/container-platform/latest/installing/installing_with_agent_based_installer/preparing-to-install-with-agent-based-installer.html"
+  },
+  {
+    "question": "How would you craft a strong interview answer about adding a node to a SNO cluster?",
+    "answer": "Structure: 1) Clarify you're adding a worker (not control-plane) - SNO remains single control-plane. 2) Check the platform type: oc get infrastructure cluster -o jsonpath='{.status.platformStatus.type}'. 3) Check for MachineSets: oc get machinesets -n openshift-machine-api. 4) If IPI with Machine API: scale/create a MachineSet. 5) If UPI/platform:none: provision manually, boot RHCOS with worker Ignition, approve CSRs. 6) If Assisted Installer: use add-host discovery ISO. 7) Always verify: oc get nodes, oc get csr, oc get mcp, oc get co.",
+    "label": "Deployment",
+    "type": "interview",
+    "difficulty": "hard",
+    "resource": "https://docs.openshift.com/container-platform/latest/installing/index.html"
+  }
+]

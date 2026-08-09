@@ -824,6 +824,95 @@
     .bookmark-list-btn:hover { color: #f59e0b; }
     .bookmark-list-btn.active { color: #f59e0b; }
 
+    /* ── Micro-session ── */
+    .micro-pick {
+      width: 100%;
+      display: flex;
+      flex-direction: column;
+      gap: 14px;
+      padding-top: 8px;
+    }
+    .micro-pick-label {
+      font-size: 12px;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      color: var(--text-muted);
+    }
+    .micro-pick-row {
+      display: flex;
+      gap: 8px;
+      flex-wrap: wrap;
+    }
+    .micro-pick-btn {
+      flex: 1;
+      min-width: 56px;
+      padding: 14px 8px;
+      border-radius: 12px;
+      border: 2px solid var(--border);
+      background: var(--surface);
+      color: var(--text);
+      font-size: 20px;
+      font-weight: 700;
+      cursor: pointer;
+      transition: all 0.15s;
+      text-align: center;
+    }
+    .micro-pick-btn:hover { border-color: var(--primary); color: var(--primary); }
+    .micro-pick-btn.selected { border-color: var(--primary); background: var(--primary); color: #fff; }
+    .micro-counter {
+      width: 100%;
+      text-align: center;
+      font-size: 13px;
+      font-weight: 600;
+      color: var(--primary);
+      letter-spacing: 0.5px;
+    }
+    .micro-summary {
+      width: 100%;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 18px;
+      padding-top: 16px;
+    }
+    .micro-summary h3 {
+      font-size: 20px;
+      font-weight: 700;
+    }
+    .micro-summary-stats {
+      display: flex;
+      gap: 10px;
+      width: 100%;
+    }
+    .micro-summary-stats .summary-card { flex: 1; }
+    .micro-summary-actions {
+      width: 100%;
+      display: flex;
+      gap: 10px;
+    }
+    .micro-summary-actions .btn { flex: 1; }
+    .micro-start-row {
+      width: 100%;
+      display: flex;
+      gap: 10px;
+      margin-top: 4px;
+    }
+    .micro-start-btn {
+      flex: 1;
+      padding: 14px 12px;
+      border-radius: 14px;
+      border: 2px solid var(--primary);
+      background: var(--surface);
+      color: var(--primary);
+      font-size: 15px;
+      font-weight: 700;
+      cursor: pointer;
+      transition: all 0.15s;
+      text-align: center;
+    }
+    .micro-start-btn:hover { background: var(--primary); color: #fff; }
+
     /* ── Mobile adjustments (≤ 480px) ── */
     @media (max-width: 480px) {
       header { padding: 8px 10px; }
@@ -873,7 +962,7 @@
 var S = {
   token:        localStorage.getItem('fc_token') || '',
   gistId:       localStorage.getItem('fc_gist_id') || '',
-  appMode:      localStorage.getItem('fc_appMode') || '',  // '' | 'language' | 'interview'
+  appMode:      '',  // '' | 'language' | 'interview' — always start at mode chooser
   cards:        [],
   current:      null,
   lastId:       null,
@@ -906,7 +995,13 @@ var S = {
   idleTimeout:  parseInt(localStorage.getItem('fc_idle') || '60', 10), // seconds; 0 = off
   difficultyFilter: '',  // '' | 'easy' | 'medium' | 'hard'
   bookmarkFilter: false, // show only bookmarked cards
-  practiceMode: false    // no-scoring study mode
+  practiceMode: false,   // no-scoring study mode
+  // Micro-session
+  microSession:  false,
+  microSize:     5,
+  microQueue:    [],     // card IDs left in this micro-session
+  microResults:  [],     // {id, level} for each answered card
+  microTotal:    0       // size chosen when session started
 };
 
 var stats = JSON.parse(localStorage.getItem('fc_stats') || '[]');
@@ -1255,6 +1350,15 @@ function renderSetup() {
 }
 
 function renderStudy() {
+  // Micro-session summary screen
+  if (S.microSession && !S.current && S.microQueue.length === 0 && S.microResults.length > 0) {
+    return '<div class="study-area">' +
+      '<div id="saving-lbl" class="saving"></div>' +
+      renderMicroSummary() +
+      renderStopwatch() +
+      '</div>';
+  }
+
   var pool = filteredPool();
   var isSit = S.studyMode === 'situation';
   var isInt = S.studyMode === 'interview';
@@ -1271,10 +1375,15 @@ function renderStudy() {
   html += '<div id="saving-lbl" class="saving"></div>';
   if (S.err) html += '<div class="error-banner">' + esc(S.err) + '</div>';
   if (S.idleNote) html += '<div class="idle-banner">⏸ Timer paused — no activity for 1 min <button onclick="dismissIdle()">✕</button></div>';
-  if (isInt && S.practiceMode) html += '<div class="practice-indicator">Practice mode — no scoring</div>';
+  if (isInt && S.practiceMode && !S.microSession) html += '<div class="practice-indicator">Practice mode — no scoring</div>';
+  // Micro-session counter
+  if (S.microSession && S.current) {
+    var microDone = S.microResults.length + 1;
+    html += '<div class="micro-counter">Card ' + microDone + ' of ' + S.microTotal + '</div>';
+  }
 
-  // Controls bar: filter pills + shuffle button
-  if (total > 0) {
+  // Controls bar: filter pills + shuffle button (hidden during micro-session)
+  if (total > 0 && !S.microSession) {
     html += '<div class="controls-bar"><div class="filter-pills">';
     html += '<button class="fpill' + (!S.filterLabel ? ' active' : '') + '" onclick="setFilter(\'\')">All (' + total + ')</button>';
     labels.forEach(function(lbl) {
@@ -1304,17 +1413,28 @@ function renderStudy() {
       html += '<button class="shuffle-btn' + (S.direction === 'ru-en' ? ' active' : '') + '" onclick="toggleDirection()" title="Flip card direction">' + (S.direction === 'en-ru' ? 'EN→RU' : 'RU→EN') + '</button>';
     }
     html += '</div></div>';
+
+    // Quick session start row (only when NOT already in a micro-session)
+    if (!S.microSession) {
+      html += '<div class="micro-start-row">';
+      [5, 10, 15].forEach(function(n) {
+        var available = pool.length;
+        var disabled = available < 1;
+        html += '<button class="micro-start-btn"' + (disabled ? ' disabled style="opacity:0.4;cursor:not-allowed"' : '') + ' onclick="startMicroSession(' + n + ')">Quick ' + n + '</button>';
+      });
+      html += '</div>';
+    }
   }
 
-  // Shuffle progress bar
-  if (S.shuffleMode && poolSize > 0) {
+  // Shuffle progress bar (hidden during micro-session)
+  if (S.shuffleMode && poolSize > 0 && !S.microSession) {
     var done = poolSize - queueLeft;
     var pct = Math.round((done / poolSize) * 100);
     html += '<div class="progress-wrap"><div class="progress-bar-wrap"><div class="progress-bar-fill" style="width:' + pct + '%"></div></div><span class="progress-count">' + done + ' / ' + poolSize + '</span></div>';
   }
 
-  // Session stats (hidden in practice mode)
-  if (pool.length > 0 && !(isInt && S.practiceMode)) {
+  // Session stats (hidden in practice mode and micro-session)
+  if (pool.length > 0 && !(isInt && S.practiceMode) && !S.microSession) {
     html += '<div class="stats-bar">' +
       '<span class="session-pill">' +
         '<span class="s-k">✓' + S.sessionKnown + '</span>' +
@@ -1325,13 +1445,22 @@ function renderStudy() {
       '</div>';
   }
 
-  // Session progress bar
+  // Session progress bar (hidden during micro-session)
+  if (S.microSession) {
+    // Micro-session progress bar
+    var microDoneCount = S.microResults.length;
+    var microPct = Math.round((microDoneCount / S.microTotal) * 100);
+    html += '<div class="session-progress">' +
+      '<div class="session-progress-bar"><div class="session-progress-fill" style="width:' + microPct + '%"></div></div>' +
+      '<span class="session-progress-text">' + microDoneCount + '/' + S.microTotal + '</span>' +
+    '</div>';
+  }
   var allInScope = S.filterLabel
     ? modeCards.filter(function(c) { return c.label === S.filterLabel; })
     : modeCards;
   var sessionDone = !pool.length && allInScope.length > 0;
   var sessionTotal = S.sessionKnown + S.sessionUnknown;
-  if (sessionTotal > 0 && allInScope.length > 0) {
+  if (sessionTotal > 0 && allInScope.length > 0 && !S.microSession) {
     var progressPct = Math.round((sessionTotal / allInScope.length) * 100);
     html += '<div class="session-progress">' +
       '<div class="session-progress-bar"><div class="session-progress-fill" style="width:' + Math.min(progressPct, 100) + '%"></div></div>' +
@@ -1420,7 +1549,21 @@ function renderStudy() {
       '</div></div>';
 
     if (S.flipped) {
-      if (isInt && S.practiceMode) {
+      if (S.microSession) {
+        // Micro-session: use micro-specific handlers
+        if (isInt) {
+          html += '<div class="action-row-3">' +
+            '<button class="btn btn-unknown" onclick="microMarkInterview(\'failed\')">✗ Failed</button>' +
+            '<button class="btn btn-partial" onclick="microMarkInterview(\'partial\')">~ Partially</button>' +
+            '<button class="btn btn-known" onclick="microMarkInterview(\'nailed\')">✓ Nailed it</button>' +
+            '</div>';
+        } else {
+          html += '<div class="action-row">' +
+            '<button class="btn btn-unknown" onclick="microMarkCard(false)">✗ Don\'t know</button>' +
+            '<button class="btn btn-known" onclick="microMarkCard(true)">✓ Know it</button>' +
+            '</div>';
+        }
+      } else if (isInt && S.practiceMode) {
         // Practice mode: just Next, no scoring
         html += '<button class="btn btn-primary btn-full" onclick="practiceNext()">Next →</button>';
       } else if (isInt) {
@@ -1436,8 +1579,10 @@ function renderStudy() {
           '<button class="btn btn-known" onclick="markCard(true)">✓ Know it</button>' +
           '</div>';
       }
-    } else {
+    } else if (!S.microSession) {
       html += '<button class="skip-btn" onclick="skip()">Skip →</button>';
+    } else {
+      html += '<div style="height:44px"></div>'; // spacer in micro-session (no skip)
     }
   }
   html += renderStopwatch();
@@ -1998,6 +2143,112 @@ function togglePractice() {
   render();
 }
 
+// ── Micro-session ─────────────────────────────────────────────────────────────
+
+function startMicroSession(count) {
+  var pool = filteredPool();
+  if (!pool.length) return;
+  var picked = shuffleArray(pool.map(function(c) { return c.id; })).slice(0, count);
+  S.microSession = true;
+  S.microSize = count;
+  S.microTotal = picked.length;
+  S.microQueue = picked.slice(1);
+  S.microResults = [];
+  S.sessionKnown = 0;
+  S.sessionUnknown = 0;
+  S.sessionKnownIds = {};
+  S.current = pool.find(function(c) { return c.id === picked[0]; }) || null;
+  S.flipped = false;
+  S.view = 'study';
+  render(); updateNav();
+}
+
+function microAdvance(level) {
+  if (!S.current) return;
+  S.microResults.push({ id: S.current.id, level: level });
+  if (S.microQueue.length > 0) {
+    var nextId = S.microQueue.shift();
+    S.current = S.cards.find(function(c) { return c.id === nextId; }) || null;
+    S.flipped = false;
+  } else {
+    S.current = null;
+    S.flipped = false;
+  }
+  resetIdleTimer();
+  render();
+}
+
+function microMarkCard(known) {
+  if (!S.current) return;
+  if (known) { S.current.known = (S.current.known || 0) + 1; S.sessionKnown++; }
+  else { S.current.unknown = (S.current.unknown || 0) + 1; S.sessionUnknown++; }
+  scheduleSave();
+  microAdvance(known ? 'known' : 'unknown');
+}
+
+function microMarkInterview(level) {
+  if (!S.current) return;
+  if (level === 'nailed') {
+    S.current.known = (S.current.known || 0) + 2;
+    S.sessionKnown++;
+  } else if (level === 'partial') {
+    S.current.known = (S.current.known || 0) + 1;
+    S.current.unknown = (S.current.unknown || 0) + 1;
+    S.sessionKnown++;
+  } else {
+    S.current.unknown = (S.current.unknown || 0) + 2;
+    S.sessionUnknown++;
+  }
+  scheduleSave();
+  microAdvance(level);
+}
+
+function endMicroSession() {
+  S.microSession = false;
+  S.microQueue = [];
+  S.microResults = [];
+  S.microTotal = 0;
+  S.current = nextCard();
+  S.flipped = false;
+  render();
+}
+
+function renderMicroSummary() {
+  var nailed = 0, partial = 0, failed = 0, known = 0, unknown = 0;
+  S.microResults.forEach(function(r) {
+    if (r.level === 'nailed') nailed++;
+    else if (r.level === 'partial') partial++;
+    else if (r.level === 'failed') failed++;
+    else if (r.level === 'known') known++;
+    else unknown++;
+  });
+  var total = S.microResults.length;
+  var isInt = S.studyMode === 'interview';
+  var elapsed = fmtTime(swCurrentMs());
+
+  var html = '<div class="micro-summary">';
+  html += '<h3>Session complete</h3>';
+  html += '<p style="color:var(--text-muted);font-size:14px">' + total + ' card' + (total !== 1 ? 's' : '') + ' reviewed' + (swCurrentMs() > 0 ? ' in ' + elapsed : '') + '</p>';
+
+  html += '<div class="micro-summary-stats">';
+  if (isInt) {
+    html += '<div class="summary-card"><span class="s-val s-k">' + nailed + '</span><span class="s-lbl">Nailed</span></div>';
+    html += '<div class="summary-card"><span class="s-val" style="color:#f59e0b">' + partial + '</span><span class="s-lbl">Partial</span></div>';
+    html += '<div class="summary-card"><span class="s-val s-u">' + failed + '</span><span class="s-lbl">Failed</span></div>';
+  } else {
+    html += '<div class="summary-card"><span class="s-val s-k">' + known + '</span><span class="s-lbl">Known</span></div>';
+    html += '<div class="summary-card"><span class="s-val s-u">' + unknown + '</span><span class="s-lbl">Don\'t know</span></div>';
+  }
+  html += '</div>';
+
+  html += '<div class="micro-summary-actions">';
+  html += '<button class="btn btn-primary" onclick="startMicroSession(' + S.microSize + ')">Another ' + S.microSize + '</button>';
+  html += '<button class="btn" style="background:var(--bg);color:var(--text);border:1px solid var(--border)" onclick="endMicroSession()">Done</button>';
+  html += '</div>';
+  html += '</div>';
+  return html;
+}
+
 function enterAppMode(mode) {
   S.appMode = mode;
   localStorage.setItem('fc_appMode', mode);
@@ -2020,6 +2271,10 @@ function enterAppMode(mode) {
   S.difficultyFilter = '';
   S.bookmarkFilter = false;
   S.practiceMode = false;
+  S.microSession = false;
+  S.microQueue = [];
+  S.microResults = [];
+  S.microTotal = 0;
   S.view = 'study';
   S.current = nextCard();
   render(); updateNav();
@@ -2045,6 +2300,10 @@ function showStudyMode(mode) {
   S.difficultyFilter = '';
   S.bookmarkFilter = false;
   S.practiceMode = false;
+  S.microSession = false;
+  S.microQueue = [];
+  S.microResults = [];
+  S.microTotal = 0;
   S.current = nextCard();
   showView('study');
 }
@@ -2060,6 +2319,10 @@ function resetSession() {
   S.sessionKnownIds = {};
   S.shuffleQueue = [];
   S.lastId = null;
+  S.microSession = false;
+  S.microQueue = [];
+  S.microResults = [];
+  S.microTotal = 0;
   S.current = nextCard();
   S.flipped = false;
   render();
@@ -2212,7 +2475,7 @@ function connect() {
 
 function resetToken() {
   S.token = ''; S.gistId = ''; S.cards = []; S.current = null; S.err = ''; S.appMode = '';
-  S.filterLabel = ''; S.manageFilter = ''; S.manageTypeFilter = ''; S.shuffleMode = false; S.shuffleQueue = []; S.direction = 'en-ru'; S.importOpen = false; S.importMsg = ''; S.addMsg = ''; S.managePage = 0; S.sessionKnown = 0; S.sessionUnknown = 0; S.sessionKnownIds = {}; S.studyMode = 'vocab'; S.addType = 'vocab'; S.statsPeriod = 7; S.statsMode = ''; S.statsMetric = 'cards'; S.idleNote = false; S.difficultyFilter = ''; S.bookmarkFilter = false; S.practiceMode = false; clearIdleTimer();
+  S.filterLabel = ''; S.manageFilter = ''; S.manageTypeFilter = ''; S.shuffleMode = false; S.shuffleQueue = []; S.direction = 'en-ru'; S.importOpen = false; S.importMsg = ''; S.addMsg = ''; S.managePage = 0; S.sessionKnown = 0; S.sessionUnknown = 0; S.sessionKnownIds = {}; S.studyMode = 'vocab'; S.addType = 'vocab'; S.statsPeriod = 7; S.statsMode = ''; S.statsMetric = 'cards'; S.idleNote = false; S.difficultyFilter = ''; S.bookmarkFilter = false; S.practiceMode = false; S.microSession = false; S.microQueue = []; S.microResults = []; S.microTotal = 0; clearIdleTimer();
   localStorage.removeItem('fc_token');
   localStorage.removeItem('fc_gist_id');
   localStorage.removeItem('fc_appMode');
@@ -2329,18 +2592,21 @@ function onTouchEnd(e) {
   if (Math.abs(dx) > SWIPE_THRESHOLD && Math.abs(dx) > Math.abs(dy)) {
     if (dx > 0) {
       // Swipe right = Know it / Nailed it
-      if (isInt && !S.practiceMode) markInterview('nailed');
+      if (S.microSession) { isInt ? microMarkInterview('nailed') : microMarkCard(true); }
+      else if (isInt && !S.practiceMode) markInterview('nailed');
       else if (!isInt) markCard(true);
       else practiceNext();
     } else {
       // Swipe left = Don't know / Failed
-      if (isInt && !S.practiceMode) markInterview('failed');
+      if (S.microSession) { isInt ? microMarkInterview('failed') : microMarkCard(false); }
+      else if (isInt && !S.practiceMode) markInterview('failed');
       else if (!isInt) markCard(false);
       else practiceNext();
     }
   } else if (dy < -SWIPE_THRESHOLD && Math.abs(dy) > Math.abs(dx)) {
     // Swipe up = Partially (interview only)
-    if (isInt && !S.practiceMode) markInterview('partial');
+    if (S.microSession && isInt) microMarkInterview('partial');
+    else if (isInt && !S.practiceMode) markInterview('partial');
     else skip();
   } else if (dy > SWIPE_THRESHOLD && Math.abs(dy) > Math.abs(dx)) {
     // Swipe down = Skip
@@ -2355,36 +2621,43 @@ document.addEventListener('keydown', function(e) {
   if (S.view !== 'study' || !S.current) return;
 
   var isInt = S.studyMode === 'interview';
+  var micro = S.microSession;
   if (e.code === 'Space' || e.code === 'Enter') {
     e.preventDefault();
     if (!S.flipped) flip();
-    else if (isInt && S.practiceMode) practiceNext();
+    else if (!micro && isInt && S.practiceMode) practiceNext();
   } else if (e.code === 'ArrowRight') {
     e.preventDefault();
     if (S.flipped) {
-      if (isInt && !S.practiceMode) markInterview('nailed');
+      if (micro) { isInt ? microMarkInterview('nailed') : microMarkCard(true); }
+      else if (isInt && !S.practiceMode) markInterview('nailed');
       else if (!isInt) markCard(true);
       else practiceNext();
-    } else skip();
+    } else if (!micro) skip();
   } else if (e.code === 'ArrowLeft') {
     e.preventDefault();
     if (S.flipped) {
-      if (isInt && !S.practiceMode) markInterview('failed');
+      if (micro) { isInt ? microMarkInterview('failed') : microMarkCard(false); }
+      else if (isInt && !S.practiceMode) markInterview('failed');
       else if (!isInt) markCard(false);
       else practiceNext();
     }
   } else if (e.code === 'ArrowUp' && S.flipped) {
     e.preventDefault();
-    if (isInt && !S.practiceMode) markInterview('partial');
+    if (micro && isInt) microMarkInterview('partial');
+    else if (isInt && !S.practiceMode) markInterview('partial');
   } else if (e.code === 'ArrowDown') {
     e.preventDefault();
-    skip();
-  } else if (e.key === '1' && S.flipped && isInt && !S.practiceMode) {
-    markInterview('failed');
-  } else if (e.key === '2' && S.flipped && isInt && !S.practiceMode) {
-    markInterview('partial');
-  } else if (e.key === '3' && S.flipped && isInt && !S.practiceMode) {
-    markInterview('nailed');
+    if (!micro) skip();
+  } else if (e.key === '1' && S.flipped && isInt) {
+    if (micro) microMarkInterview('failed');
+    else if (!S.practiceMode) markInterview('failed');
+  } else if (e.key === '2' && S.flipped && isInt) {
+    if (micro) microMarkInterview('partial');
+    else if (!S.practiceMode) markInterview('partial');
+  } else if (e.key === '3' && S.flipped && isInt) {
+    if (micro) microMarkInterview('nailed');
+    else if (!S.practiceMode) markInterview('nailed');
   }
 });
 
