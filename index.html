@@ -988,6 +988,7 @@ var S = {
   managePage:   0,       // current page in the manage list
   sessionKnown:   0,     // "Know it" clicks this session
   sessionUnknown: 0,     // "Don't know" clicks this session
+  sessionPartial: 0,     // "Partially" clicks this session (interview only)
   sessionKnownIds: {},   // {[id]: true} cards not to show again this session
   studyMode:  'vocab',   // 'vocab' | 'situation'
   addType:    'vocab',   // type selected in the add-card form
@@ -1344,7 +1345,7 @@ function markInterview(level) {
   } else if (level === 'partial') {
     S.current.known = (S.current.known || 0) + 1;
     S.current.unknown = (S.current.unknown || 0) + 1;
-    S.sessionKnown++;
+    S.sessionPartial++;
   } else {
     S.current.unknown = (S.current.unknown || 0) + 2;
     S.sessionUnknown++;
@@ -1525,18 +1526,14 @@ function renderStudy() {
     if (!isSit && !isInt) {
       html += '<button class="shuffle-btn' + (S.direction === 'ru-en' ? ' active' : '') + '" onclick="toggleDirection()" title="Flip card direction">' + (S.direction === 'en-ru' ? 'EN→RU' : 'RU→EN') + '</button>';
     }
-    html += '</div></div>';
-
-    // Quick session start row (only when NOT already in a micro-session)
-    if (!S.microSession) {
-      html += '<div class="micro-start-row">';
+    // Quick session pills (inline, only when NOT already in a micro-session)
+    if (!S.microSession && pool.length > 0) {
+      html += '<span style="color:var(--border);margin:0 2px">|</span>';
       [5, 10, 15].forEach(function(n) {
-        var available = pool.length;
-        var disabled = available < 1;
-        html += '<button class="micro-start-btn"' + (disabled ? ' disabled style="opacity:0.4;cursor:not-allowed"' : '') + ' onclick="startMicroSession(' + n + ')">Quick ' + n + '</button>';
+        html += '<button class="shuffle-btn" onclick="startMicroSession(' + n + ')">Q' + n + '</button>';
       });
-      html += '</div>';
     }
+    html += '</div></div>';
   }
 
   // Shuffle progress bar (hidden during micro-session)
@@ -1548,13 +1545,23 @@ function renderStudy() {
 
   // Session stats (hidden in practice mode and micro-session)
   if (pool.length > 0 && !(isInt && S.practiceMode) && !S.microSession) {
-    html += '<div class="stats-bar">' +
-      '<span class="session-pill">' +
+    html += '<div class="stats-bar">';
+    if (isInt) {
+      html += '<span class="session-pill">' +
+        '<span class="s-k">✓' + S.sessionKnown + '</span>' +
+        '<span class="session-sep"> / </span>' +
+        '<span style="color:#f59e0b">~' + S.sessionPartial + '</span>' +
+        '<span class="session-sep"> / </span>' +
+        '<span class="s-u">✗' + S.sessionUnknown + '</span>' +
+      '</span>';
+    } else {
+      html += '<span class="session-pill">' +
         '<span class="s-k">✓' + S.sessionKnown + '</span>' +
         '<span class="session-sep"> / </span>' +
         '<span class="s-u">✗' + S.sessionUnknown + '</span>' +
-      '</span>' +
-      '<button class="reset-session-btn" onclick="resetSession()" title="Restart session count">↺</button>' +
+      '</span>';
+    }
+    html += '<button class="reset-session-btn" onclick="resetSession()" title="Restart session count">↺</button>' +
       '</div>';
   }
 
@@ -1572,7 +1579,7 @@ function renderStudy() {
     ? modeCards.filter(function(c) { return c.label === S.filterLabel; })
     : modeCards;
   var sessionDone = !pool.length && allInScope.length > 0;
-  var sessionTotal = S.sessionKnown + S.sessionUnknown;
+  var sessionTotal = S.sessionKnown + S.sessionUnknown + S.sessionPartial;
   if (sessionTotal > 0 && allInScope.length > 0 && !S.microSession) {
     var progressPct = Math.round((sessionTotal / allInScope.length) * 100);
     html += '<div class="session-progress">' +
@@ -1891,13 +1898,15 @@ function todayStr() {
 
 function recordSession() {
   if (swCurrentMs() === 0) return;
-  stats.push({
+  var rec = {
     date:    todayStr(),
     duration: swCurrentMs(),
     known:   S.sessionKnown,
     unknown: S.sessionUnknown,
     mode:    S.studyMode
-  });
+  };
+  if (S.studyMode === 'interview') rec.partial = S.sessionPartial;
+  stats.push(rec);
   localStorage.setItem('fc_stats', JSON.stringify(stats));
 }
 
@@ -1910,13 +1919,14 @@ function aggregateStats(period, mode) {
     days.push(d.getFullYear() + '-' + pad(d.getMonth() + 1) + '-' + pad(d.getDate()));
   }
   var byDate = {};
-  days.forEach(function(dt) { byDate[dt] = { date: dt, duration: 0, known: 0, unknown: 0, sessions: 0 }; });
+  days.forEach(function(dt) { byDate[dt] = { date: dt, duration: 0, known: 0, unknown: 0, partial: 0, sessions: 0 }; });
   stats.forEach(function(r) {
     if (!byDate[r.date]) return;
     if (mode && r.mode !== mode) return;
     byDate[r.date].duration += r.duration;
     byDate[r.date].known    += r.known;
     byDate[r.date].unknown  += r.unknown;
+    byDate[r.date].partial  += (r.partial || 0);
     byDate[r.date].sessions += 1;
   });
   return days.map(function(dt) { return byDate[dt]; });
@@ -1928,21 +1938,26 @@ function fmtDateLabel(dateStr, period) {
   return months[parseInt(parts[1], 10) - 1] + ' ' + parseInt(parts[2], 10);
 }
 
-function buildChartSVG(days, metric) {
+function buildChartSVG(days, metric, isIntChart) {
   var W = 400, H = 220;
   var ml = 38, mr = 8, mt = 10, mb = 32;
   var cw = W - ml - mr, ch = H - mt - mb;
 
-  var vals = days.map(function(d) {
-    if (metric === 'time') return Math.round(d.duration / 60000);
-    return d.known + d.unknown;
-  });
   var valsK = days.map(function(d) { return d.known; });
   var valsU = days.map(function(d) { return d.unknown; });
+  var valsP = days.map(function(d) { return d.partial || 0; });
 
-  var maxVal = metric === 'time'
-    ? Math.max(1, Math.max.apply(null, vals))
-    : Math.max(1, Math.max.apply(null, valsK.concat(valsU)));
+  var maxVal;
+  if (metric === 'time') {
+    var valsT = days.map(function(d) { return Math.round(d.duration / 60000); });
+    maxVal = Math.max(1, Math.max.apply(null, valsT));
+  } else if (metric === 'ratio') {
+    maxVal = 100;
+  } else {
+    var allLines = valsK.concat(valsU);
+    if (isIntChart) allLines = allLines.concat(valsP);
+    maxVal = Math.max(1, Math.max.apply(null, allLines));
+  }
 
   var n = days.length;
   function xOf(i) { return ml + (n <= 1 ? cw / 2 : i * cw / (n - 1)); }
@@ -1956,32 +1971,57 @@ function buildChartSVG(days, metric) {
     var gv = Math.round((maxVal / gridSteps) * gi);
     var gy = yOf(gv);
     svg += '<line x1="' + ml + '" y1="' + gy + '" x2="' + (W - mr) + '" y2="' + gy + '" stroke="var(--border)" stroke-width="1" stroke-dasharray="3,3"/>';
-    svg += '<text x="' + (ml - 4) + '" y="' + (gy + 4) + '" text-anchor="end" font-size="10" fill="var(--text-muted)">' + gv + '</text>';
+    svg += '<text x="' + (ml - 4) + '" y="' + (gy + 4) + '" text-anchor="end" font-size="10" fill="var(--text-muted)">' + gv + (metric === 'ratio' ? '%' : '') + '</text>';
   }
 
   // Zero line
   svg += '<line x1="' + ml + '" y1="' + (mt + ch) + '" x2="' + (W - mr) + '" y2="' + (mt + ch) + '" stroke="var(--border)" stroke-width="1"/>';
 
-  var allZero = vals.every(function(v) { return v === 0; });
+  var allZero = days.every(function(d) {
+    if (metric === 'time') return Math.round(d.duration / 60000) === 0;
+    return d.known === 0 && d.unknown === 0 && (d.partial || 0) === 0;
+  });
 
   if (allZero) {
     svg += '<text x="' + (W / 2) + '" y="' + (H / 2) + '" text-anchor="middle" font-size="13" fill="var(--text-muted)">No data yet</text>';
   } else if (metric === 'time') {
-    // Single blue line
     var pts = days.map(function(d, i) { return xOf(i) + ',' + yOf(Math.round(d.duration / 60000)); }).join(' ');
     svg += '<polyline points="' + pts + '" fill="none" stroke="var(--primary)" stroke-width="2" stroke-linejoin="round"/>';
     days.forEach(function(d, i) {
       var v = Math.round(d.duration / 60000);
       if (v > 0) svg += '<circle cx="' + xOf(i) + '" cy="' + yOf(v) + '" r="3" fill="var(--primary)"/>';
     });
+  } else if (metric === 'ratio') {
+    // Success ratio line: known / (known + unknown) * 100, partial is neutral
+    var ptsR = days.map(function(d, i) {
+      var total = d.known + d.unknown;
+      var pct = total > 0 ? Math.round((d.known / total) * 100) : 0;
+      return xOf(i) + ',' + yOf(pct);
+    }).join(' ');
+    svg += '<polyline points="' + ptsR + '" fill="none" stroke="var(--primary)" stroke-width="2" stroke-linejoin="round"/>';
+    days.forEach(function(d, i) {
+      var total = d.known + d.unknown;
+      if (total > 0) {
+        var pct = Math.round((d.known / total) * 100);
+        svg += '<circle cx="' + xOf(i) + '" cy="' + yOf(pct) + '" r="3" fill="var(--primary)"/>';
+      }
+    });
   } else {
-    // Known line (green)
+    // Nailed/Known line (green)
     var ptsK = days.map(function(d, i) { return xOf(i) + ',' + yOf(d.known); }).join(' ');
     svg += '<polyline points="' + ptsK + '" fill="none" stroke="var(--known)" stroke-width="2" stroke-linejoin="round"/>';
     days.forEach(function(d, i) {
       if (d.known > 0) svg += '<circle cx="' + xOf(i) + '" cy="' + yOf(d.known) + '" r="3" fill="var(--known)"/>';
     });
-    // Unknown line (red)
+    // Partial line (amber, interview only)
+    if (isIntChart) {
+      var ptsPar = days.map(function(d, i) { return xOf(i) + ',' + yOf(d.partial || 0); }).join(' ');
+      svg += '<polyline points="' + ptsPar + '" fill="none" stroke="#f59e0b" stroke-width="2" stroke-linejoin="round"/>';
+      days.forEach(function(d, i) {
+        if ((d.partial || 0) > 0) svg += '<circle cx="' + xOf(i) + '" cy="' + yOf(d.partial) + '" r="3" fill="#f59e0b"/>';
+      });
+    }
+    // Failed/Unknown line (red)
     var ptsU = days.map(function(d, i) { return xOf(i) + ',' + yOf(d.unknown); }).join(' ');
     svg += '<polyline points="' + ptsU + '" fill="none" stroke="var(--unknown)" stroke-width="2" stroke-linejoin="round"/>';
     days.forEach(function(d, i) {
@@ -2010,7 +2050,7 @@ function renderStats() {
   var effectiveMode = isIntMode ? (mode || 'interview') : mode;
   var days = aggregateStats(period, effectiveMode);
 
-  var totalSessions = 0, totalMs = 0, totalKnown = 0, totalUnknown = 0;
+  var totalSessions = 0, totalMs = 0, totalKnown = 0, totalUnknown = 0, totalPartial = 0;
   var filtered = stats.filter(function(r) {
     if (isIntMode) return !effectiveMode || r.mode === effectiveMode;
     if (effectiveMode) return r.mode === effectiveMode;
@@ -2023,6 +2063,7 @@ function renderStats() {
     totalMs      += r.duration;
     totalKnown   += r.known;
     totalUnknown += r.unknown;
+    totalPartial += (r.partial || 0);
   });
   var totalMins = Math.round(totalMs / 60000);
 
@@ -2050,17 +2091,33 @@ function renderStats() {
   html += '<div class="metric-tabs">';
   html += '<button class="fpill' + (metric === 'cards' ? ' active' : '') + '" onclick="setStatsMetric(\'cards\')">Cards</button>';
   html += '<button class="fpill' + (metric === 'time' ? ' active' : '') + '" onclick="setStatsMetric(\'time\')">Time (min)</button>';
+  if (isIntMode) {
+    html += '<button class="fpill' + (metric === 'ratio' ? ' active' : '') + '" onclick="setStatsMetric(\'ratio\')">Success %</button>';
+  }
   html += '</div>';
 
   // Chart
   html += '<div class="chart-wrap">';
-  html += '<div class="chart-title">' + (metric === 'time' ? 'Minutes studied per day' : 'Cards per day') + '</div>';
-  html += buildChartSVG(days, metric);
+  var chartTitle = metric === 'time' ? 'Minutes studied per day'
+                 : metric === 'ratio' ? 'Success ratio per day'
+                 : 'Cards per day';
+  html += '<div class="chart-title">' + chartTitle + '</div>';
+  html += buildChartSVG(days, metric, isIntMode);
   if (metric === 'cards') {
-    html += '<div class="chart-legend">' +
-      '<span><span class="legend-dot" style="background:var(--known)"></span>Known</span>' +
-      '<span><span class="legend-dot" style="background:var(--unknown)"></span>Don\'t know</span>' +
-      '</div>';
+    if (isIntMode) {
+      html += '<div class="chart-legend">' +
+        '<span><span class="legend-dot" style="background:var(--known)"></span>Nailed</span>' +
+        '<span><span class="legend-dot" style="background:#f59e0b"></span>Partial</span>' +
+        '<span><span class="legend-dot" style="background:var(--unknown)"></span>Failed</span>' +
+        '</div>';
+    } else {
+      html += '<div class="chart-legend">' +
+        '<span><span class="legend-dot" style="background:var(--known)"></span>Known</span>' +
+        '<span><span class="legend-dot" style="background:var(--unknown)"></span>Don\'t know</span>' +
+        '</div>';
+    }
+  } else if (metric === 'ratio') {
+    html += '<div class="chart-legend"><span><span class="legend-dot" style="background:var(--primary)"></span>Nailed / (Nailed + Failed)</span></div>';
   } else {
     html += '<div class="chart-legend"><span><span class="legend-dot" style="background:var(--primary)"></span>Minutes</span></div>';
   }
@@ -2072,9 +2129,16 @@ function renderStats() {
   html += '<div class="summary-row">';
   html += '<div class="summary-card"><span class="s-val">' + totalSessions + '</span><span class="s-lbl">Sessions</span></div>';
   html += '<div class="summary-card"><span class="s-val">' + totalMins + '</span><span class="s-lbl">Minutes</span></div>';
-  html += '<div class="summary-card"><span class="s-val s-k">' + totalKnown + '</span><span class="s-lbl">Known</span></div>';
-  html += '<div class="summary-card"><span class="s-val s-u">' + totalUnknown + '</span><span class="s-lbl">Unknown</span></div>';
-  html += '<div class="summary-card"><span class="s-val" style="color:var(--primary)">' + pctCorrect + '%</span><span class="s-lbl">Correct</span></div>';
+  if (isIntMode) {
+    html += '<div class="summary-card"><span class="s-val s-k">' + totalKnown + '</span><span class="s-lbl">Nailed</span></div>';
+    html += '<div class="summary-card"><span class="s-val" style="color:#f59e0b">' + totalPartial + '</span><span class="s-lbl">Partial</span></div>';
+    html += '<div class="summary-card"><span class="s-val s-u">' + totalUnknown + '</span><span class="s-lbl">Failed</span></div>';
+    html += '<div class="summary-card"><span class="s-val" style="color:var(--primary)">' + pctCorrect + '%</span><span class="s-lbl">Success</span></div>';
+  } else {
+    html += '<div class="summary-card"><span class="s-val s-k">' + totalKnown + '</span><span class="s-lbl">Known</span></div>';
+    html += '<div class="summary-card"><span class="s-val s-u">' + totalUnknown + '</span><span class="s-lbl">Unknown</span></div>';
+    html += '<div class="summary-card"><span class="s-val" style="color:var(--primary)">' + pctCorrect + '%</span><span class="s-lbl">Correct</span></div>';
+  }
   html += '</div>';
 
   html += '</div>';
@@ -2279,6 +2343,7 @@ function startMicroSession(count) {
   S.microResults = [];
   S.sessionKnown = 0;
   S.sessionUnknown = 0;
+  S.sessionPartial = 0;
   S.sessionKnownIds = {};
   S.current = pool.find(function(c) { return c.id === picked[0]; }) || null;
   S.flipped = false;
@@ -2318,7 +2383,7 @@ function microMarkInterview(level) {
   } else if (level === 'partial') {
     S.current.known = (S.current.known || 0) + 1;
     S.current.unknown = (S.current.unknown || 0) + 1;
-    S.sessionKnown++;
+    S.sessionPartial++;
   } else {
     S.current.unknown = (S.current.unknown || 0) + 2;
     S.sessionUnknown++;
@@ -2391,6 +2456,7 @@ function enterAppMode(mode) {
   S.flipped = false;
   S.sessionKnown = 0;
   S.sessionUnknown = 0;
+  S.sessionPartial = 0;
   S.sessionKnownIds = {};
   S.difficultyFilter = '';
   S.bookmarkFilter = false;
@@ -2421,6 +2487,7 @@ function showStudyMode(mode) {
   S.flipped = false;
   S.sessionKnown = 0;
   S.sessionUnknown = 0;
+  S.sessionPartial = 0;
   S.sessionKnownIds = {};
   S.difficultyFilter = '';
   S.bookmarkFilter = false;
@@ -2442,6 +2509,7 @@ function setManagePage(p) {
 function resetSession() {
   S.sessionKnown = 0;
   S.sessionUnknown = 0;
+  S.sessionPartial = 0;
   S.sessionKnownIds = {};
   S.shuffleQueue = [];
   S.lastId = null;
@@ -2601,7 +2669,7 @@ function connect() {
 
 function resetToken() {
   S.token = ''; S.gistId = ''; S.cards = []; S.current = null; S.err = ''; S.appMode = '';
-  S.filterLabel = ''; S.manageFilter = ''; S.manageTypeFilter = ''; S.shuffleMode = false; S.shuffleQueue = []; S.direction = 'en-ru'; S.importOpen = false; S.importMsg = ''; S.addMsg = ''; S.managePage = 0; S.sessionKnown = 0; S.sessionUnknown = 0; S.sessionKnownIds = {}; S.studyMode = 'vocab'; S.addType = 'vocab'; S.statsPeriod = 7; S.statsMode = ''; S.statsMetric = 'cards'; S.idleNote = false; S.difficultyFilter = ''; S.bookmarkFilter = false; S.practiceMode = false; S.microSession = false; S.microQueue = []; S.microResults = []; S.microTotal = 0; clearIdleTimer();
+  S.filterLabel = ''; S.manageFilter = ''; S.manageTypeFilter = ''; S.shuffleMode = false; S.shuffleQueue = []; S.direction = 'en-ru'; S.importOpen = false; S.importMsg = ''; S.addMsg = ''; S.managePage = 0; S.sessionKnown = 0; S.sessionUnknown = 0; S.sessionPartial = 0; S.sessionKnownIds = {}; S.studyMode = 'vocab'; S.addType = 'vocab'; S.statsPeriod = 7; S.statsMode = ''; S.statsMetric = 'cards'; S.idleNote = false; S.difficultyFilter = ''; S.bookmarkFilter = false; S.practiceMode = false; S.microSession = false; S.microQueue = []; S.microResults = []; S.microTotal = 0; clearIdleTimer();
   localStorage.removeItem('fc_token');
   localStorage.removeItem('fc_gist_id');
   localStorage.removeItem('fc_appMode');
